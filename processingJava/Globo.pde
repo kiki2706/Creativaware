@@ -4,6 +4,7 @@ class Globo
   color _col;
   int[] numLados = {3,4,5,6,7,8,9,10,11,12,13,14};
   int tipoPoligono = (int)random(0,10);
+  float gravedad = 0.3, roz =0.01;
   Globo(float diametro, color col, float x, float y, float vx, float vy)
   {
     _d = diametro;
@@ -14,19 +15,41 @@ class Globo
     _vy = vy;
   }
   void update()
-  {
-    _vy -= random(0.02, 0.05);
-    _vx += random(-0.1, 0.1);
+  { 
+    //CONTROL DE LA VELOCIDAD Y
+    _vy += gravedad;//Añadimos la gravedad
+    
+    if(_vy > 0)//Aplicamos el rozamiento
+    _vy -= roz;
+    else 
+    _vy += roz;
+   
+    if(_y > height){//Cada vez que rebotamos incrementamos el roz y cambiamos la direccion
+      _vy *= -1; 
+      roz *=2;
+    }
+
+      
+      
+    //CONTROL DE LA VELOCIDAD DE X
+    if(_x > width || _x < 0)
+      _vx *= -1;
+      
+    
+    if((abs(_y-height) < 10 && (abs(_vy) < 0.1 )) && _vx < 0)
+      _vx -= 0.3;
+      if(_vx < 0.3)
+      _vx = 0;
     _x = _x + _vx;
-    _y = _y + _vy;
+    _y = _y + _vy ;
   }
   void draw()
   {
     push();
     fill(_col);
     translate(_x, _y);
-    polygon(tipoPoligono,100.0);
-    translate(0,_d/2+5);
+    polygon(numLados[tipoPoligono],40.0);
+    
     pop();
   }
   

@@ -45,7 +45,7 @@ void serialEvent(Serial p)
   //println(datoS);
   if (datoS.equals("Knock!"))
   {
-      creaGlobo(int(random(0,width)),height-100);
+      creaGlobo(int(random(0,width)),int(random(height/2, height)));
   }
 }
 
@@ -55,7 +55,7 @@ void creaGlobo(int x, int y)
     color(random(255),random(255),random(255)),
     x, 
     y, 
-    0.0, 
-    0.0));
+    random(-5,5), 
+    random(0.2, 3)));
     println(globos.size());
 }
