@@ -4,8 +4,7 @@ class Globo
   color _col;
   int[] numLados = {3,4,5,6,7,8,9,10,11,12,13,14};
   int tipoPoligono = (int)random(0,10);
-  float gravedad = 0.3, rozy =0.005;
-  PImage img = loadImage("cubo.jpg");
+  float gravedad = 0.3, roz =0.01;
   Globo(float diametro, color col, float x, float y, float vx, float vy)
   {
     _d = diametro;
@@ -20,20 +19,27 @@ class Globo
     //CONTROL DE LA VELOCIDAD Y
     _vy += gravedad;//Añadimos la gravedad
     
-      if(_vy > 0)//Aplicamos el rozamiento
-      _vy -= rozy;
-      else 
-      _vy += rozy;
-      if(_y > height){//Cada vez que rebotamos incrementamos el roz y cambiamos la direccion
-        _vy *= -1; 
-        rozy *=2;
-      }
+    if(_vy > 0)//Aplicamos el rozamiento
+    _vy -= roz;
+    else 
+    _vy += roz;
+   
+    if(_y > height){//Cada vez que rebotamos incrementamos el roz y cambiamos la direccion
+      _vy *= -1; 
+      roz *=2;
+    }
+
+      
       
     //CONTROL DE LA VELOCIDAD DE X
     if(_x > width || _x < 0)
       _vx *= -1;
+      
     
-    //SETEAMOS LAS POSCICIONES CON LAS VELOCIDADES
+    if((abs(_y-height) < 10 && (abs(_vy) < 0.1 )) && _vx < 0)
+      _vx -= 0.3;
+      if(_vx < 0.3)
+      _vx = 0;
     _x = _x + _vx;
     _y = _y + _vy ;
   }
