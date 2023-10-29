@@ -39,24 +39,24 @@ class Globo
     
     //CREACION DE VIENTOS PULSANDO TECLAS
     if(keyPressed){
-      if(key == 'w'){
+      if(key == 'w'){//ARRIBA
         for(int i= 0;i< 10; i++){
         _vy = _vy - 0.09;
         }
       }
-      else if(key == 'd'){
+      else if(key == 'd'){//DERECHA
         for(int i= 0;i< 10; i++){
         _vx = _vx + 0.03;
         }
       }
-      else if(key == 'a'){
-        for(int i= 0;i< 10; i++){
-        _vy = _vy + 0.09;
-        }
-      }
-      else if(key == 's'){
+      else if(key == 'a'){//IZQUIERDA
         for(int i= 0;i< 10; i++){
         _vx = _vx - 0.03;
+        }
+      }
+      else if(key == 's'){//ABAJO
+        for(int i= 0;i< 10; i++){
+        _vy = _vy + 0.09;
         }
       }
    }
