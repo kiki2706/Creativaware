@@ -19,10 +19,10 @@ void setup()
   background(255, 255, 255);
   img = loadImage("cuboTrans.png");
   globos = new ArrayList<Globo>();
-  printArray(Serial.list());
-  myPort = new Serial(this, Serial.list()[0], 9600);
-  myPort.bufferUntil(10);
-  myPort.clear();
+  //printArray(Serial.list());
+  //myPort = new Serial(this, Serial.list()[0], 9600);
+  //myPort.bufferUntil(10);
+  //myPort.clear();
 }
 
 void draw()
@@ -42,16 +42,16 @@ void mousePressed()
   creaGlobo(mouseX, mouseY);
 }
 
-void serialEvent(Serial p)
-{
-  String datoS = p.readString();
-  datoS = datoS.trim();
+//void serialEvent(Serial p)
+//{
+//  String datoS = p.readString();
+//  datoS = datoS.trim();
   //println(datoS);
-  if (datoS.equals("Knock!"))
-  {
-    creaGlobo(int(random(0, width)), int(random(height/2, height)));
-  }
-}
+//  if (datoS.equals("Knock!"))
+ // {
+   // creaGlobo(int(random(0, width)), int(random(height/2, height)));
+  //}
+//}
 
 void creaGlobo(int x, int y)
 {

@@ -36,6 +36,32 @@ class Globo
     //SETEAMOS LAS POSCICIONES CON LAS VELOCIDADES
     _x = _x + _vx;
     _y = _y + _vy ;
+    
+    //CREACION DE VIENTOS PULSANDO TECLAS
+    if(keyPressed){
+      if(key == 'w'){
+        for(int i= 0;i< 10; i++){
+        _vy = _vy - 0.09;
+        }
+      }
+      else if(key == 'd'){
+        for(int i= 0;i< 10; i++){
+        _vx = _vx + 0.03;
+        }
+      }
+      else if(key == 'a'){
+        for(int i= 0;i< 10; i++){
+        _vy = _vy + 0.09;
+        }
+      }
+      else if(key == 's'){
+        for(int i= 0;i< 10; i++){
+        _vx = _vx - 0.03;
+        }
+      }
+   }
+  
+
   }
   void draw()
   {
