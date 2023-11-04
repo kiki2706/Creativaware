@@ -26,8 +26,7 @@ class Globo
       _vy += rozy;
       if(_y > height){//Cada vez que rebotamos incrementamos el roz y cambiamos la direccion
         _vy *= -1; 
-        rozy *=2;
-      }
+        rozy *=1.5;      }
       
     //CONTROL DE LA VELOCIDAD DE X
     if(_x > width || _x < 0)
@@ -38,28 +37,28 @@ class Globo
     _y = _y + _vy ;
     
     //CREACION DE VIENTOS PULSANDO TECLAS
-    if(keyPressed){
-      if(key == 'w'){//ARRIBA
-        for(int i= 0;i< 10; i++){
-        _vy = _vy - 0.09;
-        }
-      }
-      else if(key == 'd'){//DERECHA
-        for(int i= 0;i< 10; i++){
-        _vx = _vx + 0.03;
-        }
-      }
-      else if(key == 'a'){//IZQUIERDA
-        for(int i= 0;i< 10; i++){
-        _vx = _vx - 0.03;
-        }
-      }
-      else if(key == 's'){//ABAJO
-        for(int i= 0;i< 10; i++){
-        _vy = _vy + 0.09;
-        }
-      }
-   }
+//    if(keyPressed){
+//      if(key == 'w'){//ARRIBA
+//        for(int i= 0;i< 10; i++){
+//        _vy = _vy - 0.09;
+//        }
+//      }
+//     else if(key == 'd'){//DERECHA
+//        for(int i= 0;i< 10; i++){
+//        _vx = _vx + 0.03;
+//        }
+//      }
+//      else if(key == 'a'){//IZQUIERDA
+//        for(int i= 0;i< 10; i++){
+//        _vx = _vx - 0.03;
+//        }
+//     }
+//      else if(key == 's'){//ABAJO
+//        for(int i= 0;i< 10; i++){
+//        _vy = _vy + 0.09;
+//        }
+//      }
+//   }
   
 
   }
