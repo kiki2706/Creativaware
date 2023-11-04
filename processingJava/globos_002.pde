@@ -33,8 +33,15 @@ void draw()
     Globo g = globos.get(i);
     g.update();
     g.draw();
+
+    
   }
-  image(img, 700.0, 575.0);
+  
+  image(img, 750.0, 575.0);
+  //line(765, 690,825, height-50);
+  fill(0,0,0);
+  rect(300, 0, 10, width);
+  rect(width-300, 0, 10, width);
 }
 
 void mousePressed()
@@ -56,7 +63,7 @@ void mousePressed()
 void creaGlobo(int x, int y)
 {
   globos.add(new Globo(random(100, 150),
-    color(0, 0, 0),
+    color(random(0,255), random(0,255), random(0,255)),
     x,
     y,
     random(-5, 5),

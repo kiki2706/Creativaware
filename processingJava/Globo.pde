@@ -6,6 +6,7 @@ class Globo
   int tipoPoligono = (int)random(0,10);
   float gravedad = 0.3, rozy =0.005;
   PImage img = loadImage("cubo.jpg");
+  //float life = 255;
   Globo(float diametro, color col, float x, float y, float vx, float vy)
   {
     _d = diametro;
@@ -24,12 +25,12 @@ class Globo
       _vy -= rozy;
       else 
       _vy += rozy;
-      if(_y > height){//Cada vez que rebotamos incrementamos el roz y cambiamos la direccion
+      if(_y > height -40.0){//Cada vez que rebotamos incrementamos el roz y cambiamos la direccion
         _vy *= -1; 
         rozy *=1.5;      }
       
     //CONTROL DE LA VELOCIDAD DE X
-    if(_x > width || _x < 0)
+    if(_x > width - 40.0 || _x < 40.0)
       _vx *= -1;
     
     //SETEAMOS LAS POSCICIONES CON LAS VELOCIDADES
@@ -37,22 +38,32 @@ class Globo
     _y = _y + _vy ;
     
     //CREACION DE VIENTOS PULSANDO TECLAS
-//    if(keyPressed){
+    if(keyPressed){
 //      if(key == 'w'){//ARRIBA
 //        for(int i= 0;i< 10; i++){
-//        _vy = _vy - 0.09;
+//        
 //        }
 //      }
-//     else if(key == 'd'){//DERECHA
-//        for(int i= 0;i< 10; i++){
-//        _vx = _vx + 0.03;
-//        }
-//      }
-//      else if(key == 'a'){//IZQUIERDA
-//        for(int i= 0;i< 10; i++){
-//        _vx = _vx - 0.03;
-//        }
-//     }
+      if(key == 'a'){//DERECHA
+        if(_x < 300){
+          for(int i= 0;i< 10; i++){
+            _vx = random(2,6);
+            _vy = random(-18,-10);
+          }
+        }      
+      } 
+      else if(key == 'd'){//IZQUIERDA
+        if (_x > width-300){
+          for(int i= 0;i< 10; i++){
+            _vx = random(-6, -2);
+            _vy = random(-18,-10);
+          }
+        }       
+      }
+    }
+//        
+//        
+
 //      else if(key == 's'){//ABAJO
 //        for(int i= 0;i< 10; i++){
 //        _vy = _vy + 0.09;
@@ -86,4 +97,7 @@ class Globo
     }
     endShape(CLOSE);
   }
+  
+ 
+
 }
