@@ -11,14 +11,16 @@
 import processing.serial.*;
 ArrayList<Globo> globos;
 Serial myPort;
-PImage img;
+PImage img, pueblo;
 
 void setup()
 {
   fullScreen();
-  background(255, 255, 255);
+  background(0,0,0);
   img = loadImage("cuboTrans.png");
+  pueblo = loadImage("pueblo.jpg");
   globos = new ArrayList<Globo>();
+  
   //printArray(Serial.list());
   //myPort = new Serial(this, Serial.list()[0], 9600);
   //myPort.bufferUntil(10);
@@ -27,21 +29,27 @@ void setup()
 
 void draw()
 {
-  background(255, 255, 255);
   for (int i = 0; i<globos.size(); i++)
   {
     Globo g = globos.get(i);
     g.update();
     g.draw();
 
-    
+    if(g.estoyFuera() == 1)
+      globos.remove(i);
+      
+    if(g.limpiaPantalla() == 1){
+      background(0,0,0);
+      for(int j = 0; j<globos.size(); j++)
+      globos.remove(j);
+    }
   }
   
-  image(img, 750.0, 575.0);
+  //image(img, width/2, height/1.87);
   //line(765, 690,825, height-50);
   fill(0,0,0);
-  rect(300, 0, 10, width);
-  rect(width-300, 0, 10, width);
+  //rect(300, 0, 10, width);
+  //rect(width-300, 0, 10, width);
 }
 
 void mousePressed()
@@ -62,11 +70,16 @@ void mousePressed()
 
 void creaGlobo(int x, int y)
 {
+  float v = random(-5, 5);
+  if(v>0)
+    v+=2;
+  else
+    v-=2;
   globos.add(new Globo(random(100, 150),
     color(random(0,255), random(0,255), random(0,255)),
     x,
     y,
-    random(-5, 5),
-    random(0.2, 3)));
+    v,
+    random(2, 3)));
   println(globos.size());
 }
