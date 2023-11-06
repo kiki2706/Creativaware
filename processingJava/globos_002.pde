@@ -15,6 +15,7 @@ PImage img, pueblo;
 float colorRojo = 0;
 float colorVerde = 0;
 float colorAzul = 0;
+float posicionX = width/2;
 
 
 
@@ -85,16 +86,16 @@ void mousePressed()
   creaGlobo(mouseX, mouseY);
 }
 
-//void serialEvent(Serial p)
-//{
-//  String datoS = p.readString();
-//  datoS = datoS.trim();
-  //println(datoS);
-//  if (datoS.equals("Knock!"))
- // {
-   // creaGlobo(int(random(0, width)), int(random(height/2, height)));
-  //}
-//}
+void serialEvent(Serial p)
+{
+  String datoS = p.readString();
+  datoS = datoS.trim();
+  println(datoS);
+  if (datoS.equals("Knock!"))
+  {
+    creaGlobo(int(random(300, width-300)), int(random(height/2, height)));
+  }
+}
 
 void creaGlobo(int x, int y)
 {

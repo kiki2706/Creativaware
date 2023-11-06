@@ -28,6 +28,9 @@ class Globo
       if(_y > height +100.0){//Cada vez que rebotamos incrementamos el roz y cambiamos la direccion
         _vy *= -1; 
         rozy *=1.5;      }
+        
+      if(_y < -50.0)//Cada vez que rebotamos incrementamos el roz y cambiamos la direccion
+        _vy *= -1;     
       
     //CONTROL DE LA VELOCIDAD DE X
     //if(_x > width - 40.0 || _x < 40.0)
