@@ -36,20 +36,20 @@ class Globo
     //CREACION DE VIENTOS PULSANDO TECLAS
     if(keyPressed){
       if(key == 'a'){//DERECHA
-        if(_x < 300 && _vy > 1){
+        if(_x < 300){
           //for(int i= 0;i< 10; i++){
-            _vy += -20;
-            _vx *= -1;
-            _vx += 5;
+            _vy += random(-5,-2);
+           
+            _vx = random(5,20);
           //}
         }      
       } 
       else if(key == 'd'){//IZQUIERDA
-        if (_x > width-300 && _vy > 1){
+        if (_x > width-300){
           //for(int i= 0;i< 10; i++){
-            _vy += -20;
-            _vx *= -1;
-            _vx -= 5;
+            _vy += random(-3,-0.5);
+            
+            _vx = random(-20, -5);
           //}
         }       
       }
@@ -103,6 +103,22 @@ class Globo
     }
     
     return 0;
+  }
+  
+  int cambiaColor(){
+    int a = 0;
+    if(keyPressed){
+      if(key == 'r'){
+        a= 1;
+      }
+      if(key == 'g'){
+         a= 2;
+      }
+      if(key == 'b'){
+         a= 3;
+      }
+    }
+    return a;
   }
  
 

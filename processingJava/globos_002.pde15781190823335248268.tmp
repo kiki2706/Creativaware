@@ -12,9 +12,9 @@ import processing.serial.*;
 ArrayList<Globo> globos;
 Serial myPort;
 PImage img, pueblo;
-float colorRojo = 0;
-float colorVerde = 0;
-float colorAzul = 0;
+int colorRojo = 0;
+int colorVerde = 0;
+int colorAzul = 0;
 
 
 
@@ -48,27 +48,17 @@ void draw()
       for(int j = 0; j<globos.size(); j++)
       globos.remove(j);
     }
-    
-    //Colores de relleno de las figuras
     if(g.cambiaColor() == 0){
-       colorRojo = random(0,255);
-       colorVerde = random(0,255);
-       colorAzul = random(0,255);
+    
     }
     else if(g.cambiaColor() == 1){
-       colorRojo = random(50,255);
-       colorVerde = 0;
-       colorAzul = 0;
+    
     }
     else if(g.cambiaColor() == 2){
-       colorRojo = 0;
-       colorVerde = random(50,255);
-       colorAzul = 0;
+    
     }
     else if(g.cambiaColor() == 3){
-       colorRojo = 0;
-       colorVerde = 0;
-       colorAzul = random(50,255);
+    
     }
     
   }
@@ -106,7 +96,7 @@ void creaGlobo(int x, int y)
     
   globos.add(new Globo(random(100, 150),
 
-    color(colorRojo, colorVerde, colorAzul),
+    color(random(10,250), random(10,250), random(10,250)),
     x,
     y,
     v,
