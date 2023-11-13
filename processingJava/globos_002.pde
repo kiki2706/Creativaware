@@ -1,13 +1,3 @@
-// Luis Molina-Tanco - 2021.
-//
-// Ejemplo uso puerto serie.
-//
-// Este programa está pensado para funcionar con un arduino
-// que esté ejecutando el ejemplo Knock, que se puede
-// ver aquí:
-//
-// https://www.arduino.cc/en/Tutorial/BuiltInExamples/Knock
-
 import processing.serial.*;
 ArrayList<Globo> globos;
 Serial myPort;
@@ -27,10 +17,10 @@ void setup()
   pueblo = loadImage("pueblo.jpg");
   globos = new ArrayList<Globo>();
   
-  //printArray(Serial.list());
-  //myPort = new Serial(this, Serial.list()[0], 9600);
-  //myPort.bufferUntil(10);
-  //myPort.clear();
+  printArray(Serial.list());
+  myPort = new Serial(this, Serial.list()[0], 9600);
+  myPort.bufferUntil(10);
+  myPort.clear();
 }
 
 void draw()
@@ -52,24 +42,24 @@ void draw()
     
     //Colores de relleno de las figuras
     if(g.cambiaColor() == 0){
-       colorRojo = random(0,255);
-       colorVerde = random(0,255);
-       colorAzul = random(0,255);
+       colorRojo = random(10,255);
+       colorVerde = random(10,255);
+       colorAzul = random(10,255);
     }
     else if(g.cambiaColor() == 1){
-       colorRojo = random(50,255);
+       colorRojo = random(50,200);
        colorVerde = 0;
        colorAzul = 0;
     }
     else if(g.cambiaColor() == 2){
        colorRojo = 0;
-       colorVerde = random(50,255);
+       colorVerde = random(50,200);
        colorAzul = 0;
     }
     else if(g.cambiaColor() == 3){
        colorRojo = 0;
        colorVerde = 0;
-       colorAzul = random(50,255);
+       colorAzul = random(50,200);
     }
     
   }
@@ -90,10 +80,9 @@ void serialEvent(Serial p)
 {
   String datoS = p.readString();
   datoS = datoS.trim();
-  println(datoS);
-  if (datoS.equals("Knock!"))
-  {
-    creaGlobo(int(random(300, width-300)), int(random(height/2, height)));
+  //println(datoS);
+  if (datoS.equals("Knock!")){
+    creaGlobo(int(random(300, width-300)), int(random(0, height/2)));
   }
 }
 
