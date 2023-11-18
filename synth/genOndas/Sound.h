@@ -14,20 +14,21 @@
 
 // CONFIGURATION VALUES
 #define NUMBER_OF_KEYS 4
-#define SIGNAL_SIZE 4096 //(2pow12 Dac resolution)
+#define SIGNAL_SIZE 4095 //(2pow12 Dac resolution)
 #define HALF_SIGNAL_SIZE (SIGNAL_SIZE >> 1)
 
-volatile float frecuency = 500;
-volatile float sampleVolume = 1; // full volume
 volatile long int sampleIndex = 0; 
+volatile float frecuency = 500;
+//volatile float sampleVolume = 1; // full volume
 volatile long int NUMBER_OF_SAMPLES = 44100/frecuency;
 uint8_t kindOfWave = 0;
+int trianguloPendiente = 1;
 
-uint8_t keys[NUMBER_OF_KEYS];
+//uint8_t keys[NUMBER_OF_KEYS];
 
-void synthKeysState(uint8_t pressedKey, uint8_t keyState){
+/*void synthKeysState(uint8_t pressedKey, uint8_t keyState){
   keys[pressedKey] = keyState;
-}
+}*/
 
 void synthSetFrecuency(uint32_t frecuency){
   NUMBER_OF_SAMPLES = 44100/frecuency;
@@ -36,37 +37,64 @@ void synthSetFrecuency(uint32_t frecuency){
 //---------------------------------
 //    DIFFERENTS WAVEFORMS SETS
 //---------------------------------
-void synthSetSawTooth(void){
+void synthSetTriangle(void){
+  kindOfWave = 0;
+}
 
+void synthSetSquare(void){
+  kindOfWave = 1;
+}
+
+void synthSetSawTooth(void){
+  kindOfWave = 2;
 }
 
 void synthSetSine(void){
-
+  kindOfWave = 3;
 }
 
-void synthSetTriangle(void){
-
-}
-
-uint16_t generateWave(void){
-  if(kindOfWave == 0)//Square wave
+/*uint16_t generateWave(void){
+ * if(kindOfWave == 0)//Triangle wave
+    return 0;
+  if(kindOfWave == 1)//Square wave
     return 0;//Hacer
-  if(kindOfWave == 1)//Triangle wave
+  if(kindOfWave == 2)//SawTooth wave
+    return (sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
+  if(kindOfWave == 3)//Sine wave
     return 0;
-  if(kindOfWave == 1)//SawTooth wave
-    return 0;
-  if(kindOfWave == 1)//Sine wave
-    return 0;
-}
+}*/
 //---------------------------------
 //  CALLBACK ISR USED BY TIMER
 //---------------------------------
 void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
-  uint16_t lastSample, nextSample;
-  if(sampleIndex >= NUMBER_OF_SAMPLES) sampleIndex = 0;
+  uint16_t lastSample;
+  
+  if(sampleIndex >= NUMBER_OF_SAMPLES) sampleIndex = 0;//When period finishes...
+  
+  //lastSample = generateWave();
+  //lastSample = (uint16_t)(sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
 
-  sampleIndex++;
-  lastSample = (uint16_t)(sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
+  
+  if(kindOfWave == 0){//Triangle wave
+    if(sampleIndex <= NUMBER_OF_SAMPLES/2) sampleIndex++;
+    else if(sampleIndex > NUMBER_OF_SAMPLES/2) sampleIndex--;
+
+    lastSample = (sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
+  }
+  else{
+      sampleIndex++;
+  }
+  
+  if(kindOfWave == 1)//Square wave
+    if(sampleIndex <= NUMBER_OF_SAMPLES/2) lastSample = 0;
+    else lastSample = 4095;
+  if(kindOfWave == 2)//SawTooth wave
+    lastSample = (sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
+  /*if(kindOfWave == 3)//Sine wave
+    lastSample = 0;*/
+
+
+
   
   *DAC12_DADR0 = lastSample;   // DAC update DAC ignores top 4 bits
 } 
