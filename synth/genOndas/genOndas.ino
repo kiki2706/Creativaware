@@ -10,31 +10,31 @@
    DO NOT CONNECT A LOUDSPEAKER TO AN ARDUINO R4 - YOU WILL DAMAGE THE ARDUINO
    You need to use an amplifier. 
 */
-#include "Arduino_LED_Matrix.h"
-ArduinoLEDMatrix matrix;
 #include "FspTimer.h"
-FspTimer audio_timer;
 #include "Defines.h"
-#include "Matrix.h"
+
+FspTimer audio_timer;
 #include "Sound.h"
 
 void setup() {
-  // first the serial port
+  // first, setup serial port
   Serial.begin(115200);
   delay(1000);
-
-  // now setup the sound                                                
-  setup_dac();
   *AGT0_AGTCR = 0; // disable Millis counter, delay etc. don't want this Interrupt messing up output stability
-  generateTable(); // maximum even harmonics
-//  hush = true;
-  beginTimer(44100); // sets the sample rate as CD quality
+
+  
+  // now setup the sound                                                
+  synthSetupDac();
+  synthBeginTimer(44100); // sets the sample rate as CD quality
 }
 
 void loop() {
   int entrada1 = analogRead(A1);
-  int pot = map(entrada1, 0, 16, 1, 50);
+  int pot = map(entrada1, 0, 1024, 20, 3000);
+
+  synthSetFrecuency(pot);
+  
   //int muestra = potenciometro(pot);
   //int muestra = potenciometro(map(pot, 0,1024, 1, 20));
-//  Serial.println(muestra);
+  //Serial.println((double)1/NUMBER_OF_SAMPLES, 5);
 }
