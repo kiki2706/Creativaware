@@ -29,12 +29,12 @@ void setup() {
 }
 
 void loop() {
-  //int entrada1 = analogRead(A1);
-  //int pot = map(entrada1, 0, 1024, 20, 3000);
+  int entrada1 = analogRead(A1);
+  int pot = map(entrada1, 0, 1024, 20, 3000);
 
-  //synthSetFrecuency(pot);
+  synthSetFrecuency(pot);
   
   //int muestra = potenciometro(pot);
   //int muestra = potenciometro(map(pot, 0,1024, 1, 20));
-  Serial.println(sampleIndex);
+  //Serial.println(sampleIndex);
 }

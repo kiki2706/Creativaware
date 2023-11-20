@@ -53,16 +53,6 @@ void synthSetSine(void){
   kindOfWave = 3;
 }
 
-/*uint16_t generateWave(void){
- * if(kindOfWave == 0)//Triangle wave
-    return 0;
-  if(kindOfWave == 1)//Square wave
-    return 0;//Hacer
-  if(kindOfWave == 2)//SawTooth wave
-    return (sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
-  if(kindOfWave == 3)//Sine wave
-    return 0;
-}*/
 //---------------------------------
 //  CALLBACK ISR USED BY TIMER
 //---------------------------------
@@ -70,28 +60,18 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
   uint16_t lastSample;
   
   if(sampleIndex >= NUMBER_OF_SAMPLES) sampleIndex = 0;//When period finishes...
-  
-  //lastSample = generateWave();
-  //lastSample = (uint16_t)(sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
-
+  sampleIndex++;
   
   if(kindOfWave == 0){//Triangle wave
-    if(sampleIndex <= NUMBER_OF_SAMPLES/2) sampleIndex++;
-    else if(sampleIndex > NUMBER_OF_SAMPLES/2) sampleIndex--;
-
-    lastSample = (sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
-  }
-  else{
-      sampleIndex++;
-  }
-  
+    if(sampleIndex <= NUMBER_OF_SAMPLES/2) lastSample = (sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
+    else lastSample = ((NUMBER_OF_SAMPLES - sampleIndex) * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
   if(kindOfWave == 1)//Square wave
     if(sampleIndex <= NUMBER_OF_SAMPLES/2) lastSample = 0;
     else lastSample = 4095;
   if(kindOfWave == 2)//SawTooth wave
     lastSample = (sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
-  /*if(kindOfWave == 3)//Sine wave
-    lastSample = 0;*/
+  if(kindOfWave == 3)//Sine wave
+    lastSample = 0;
 
 
 
