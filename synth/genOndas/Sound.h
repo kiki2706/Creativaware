@@ -5,52 +5,65 @@
 //
 //                           :)   ENJOY!!!
 //
-//  Library developed starting from Grumpy Mike's library PON EL ENLACE NOE
-//   and hightly modified by Noé Paniagua and Kiki Gómez, UMA students...
+//  Library developed starting from Grumpy Mike's code PON EL ENLACE NOE
+//   and hightly modified by Noé Paniagua and Kiki Gómez, UMA students.
 //
 //
 //**********************************************************************
 #include "FspTimer.h"
 
-// CONFIGURATION VALUES
+//-------------------------------------
+//    SYNTH HARDWARE CONFIGURATIONS
+//-------------------------------------
 #define NUMBER_OF_KEYS 4
-#define SIGNAL_SIZE 4095 //(2pow12 Dac resolution)
-#define HALF_SIGNAL_SIZE (SIGNAL_SIZE >> 1)
+#define DAC_RESOLUTION 4095
 
-volatile long int sampleIndex = 0; 
+//-------------------------------
+//    SYNTH SOFTWARE VARIABLES
+//-------------------------------
+volatile float samplerFrecuency = 44100;
+volatile float sampleVolume = 1;
 volatile float frecuency = 500;
-//volatile float sampleVolume = 1; // full volume
-volatile long int NUMBER_OF_SAMPLES = 44100/frecuency;
+volatile int SIGNAL_SIZE = 4096;
+volatile int newSIGNAL_SIZE = 4096;
+
+volatile long int NUMBER_OF_SAMPLES = samplerFrecuency/frecuency;//
+volatile long int sampleIndex = 0; 
+ 
 uint8_t kindOfWave = 0;
-int trianguloPendiente = 1;
+uint8_t keys[NUMBER_OF_KEYS];
 
-//uint8_t keys[NUMBER_OF_KEYS];
 
-/*void synthKeysState(uint8_t pressedKey, uint8_t keyState){
+//-------------------------------------
+//    N-KEY STATE PRESSED/UNPRESSED
+//-------------------------------------
+void synthKeysState(uint8_t pressedKey, uint8_t keyState){
   keys[pressedKey] = keyState;
-}*/
+}
 
+
+//---------------------------------
+//    SET FRECUENCY OSCILLATOR
+//---------------------------------
 void synthSetFrecuency(uint32_t frecuency){
-  NUMBER_OF_SAMPLES = 44100/frecuency;
+  NUMBER_OF_SAMPLES = samplerFrecuency/frecuency;
 }
 
-//---------------------------------
+//----------------------
+//    SET SYTH VOLUME
+//----------------------
+void synthSetVolume(int newVolume){
+  newSIGNAL_SIZE = map(newVolume, 0, 1024, 0, DAC_RESOLUTION);
+}
+
+//-----------------------------------
 //    DIFFERENTS WAVEFORMS SETS
-//---------------------------------
-void synthSetTriangle(void){
-  kindOfWave = 0;
-}
-
-void synthSetSquare(void){
-  kindOfWave = 1;
-}
-
-void synthSetSawTooth(void){
-  kindOfWave = 2;
-}
-
-void synthSetSine(void){
-  kindOfWave = 3;
+//
+//    [0]-> Triangle    [1]-> Square
+//    [2]-> SawTooth    [3]-> Sine
+//-----------------------------------
+void synthSetWaveForm(int wave){
+  kindOfWave = wave;
 }
 
 //---------------------------------
@@ -59,22 +72,22 @@ void synthSetSine(void){
 void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
   uint16_t lastSample;
   
-  if(sampleIndex >= NUMBER_OF_SAMPLES) sampleIndex = 0;//When period finishes...
+  if(sampleIndex >= NUMBER_OF_SAMPLES){
+    sampleIndex = 0;//When period finishes...
+    SIGNAL_SIZE = newSIGNAL_SIZE;
+  }
   sampleIndex++;
   
-  if(kindOfWave == 0){//Triangle wave
-    if(sampleIndex <= NUMBER_OF_SAMPLES/2) lastSample = (sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
-    else lastSample = ((NUMBER_OF_SAMPLES - sampleIndex) * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
-  if(kindOfWave == 1)//Square wave
+  if(kindOfWave == 0)// Triangle wave
+    if(sampleIndex <= NUMBER_OF_SAMPLES/2) lastSample = (2 * sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
+      else lastSample = (2 * (NUMBER_OF_SAMPLES - sampleIndex) * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
+  else if(kindOfWave == 1)// Square wave
     if(sampleIndex <= NUMBER_OF_SAMPLES/2) lastSample = 0;
-    else lastSample = 4095;
-  if(kindOfWave == 2)//SawTooth wave
+      else lastSample = SIGNAL_SIZE;
+  else if(kindOfWave == 2)// SawTooth wave
     lastSample = (sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
-  if(kindOfWave == 3)//Sine wave
-    lastSample = 0;
-
-
-
+  else if(kindOfWave == 3)//Sine wave
+    lastSample = 0;// XD por lo pront
   
   *DAC12_DADR0 = lastSample;   // DAC update DAC ignores top 4 bits
 } 
@@ -85,6 +98,9 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
 bool synthBeginTimer(float rate) {
   uint8_t timer_type = GPT_TIMER;
   int8_t tindex = FspTimer::get_available_timer(timer_type);
+
+  samplerFrecuency = rate;
+  
   if (tindex < 0){
     tindex = FspTimer::get_available_timer(timer_type, true);
   }
