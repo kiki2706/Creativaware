@@ -62,7 +62,7 @@ void synthSetVolume(int newVolume){
 //    [0]-> Triangle    [1]-> Square
 //    [2]-> SawTooth    [3]-> Sine
 //-----------------------------------
-void synthSetWaveForm(int wave){
+void synthSetWaveForm(uint8_t wave){
   kindOfWave = wave;
 }
 
