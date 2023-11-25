@@ -3,49 +3,61 @@
 FspTimer audio_timer;
 
 #include "Sound.h"
+#include "Button.h"
 
 #define FrecuenciaPin A1
 #define VolumenPin A2
 #define FormaOndaPin 2
+#define pinTecla1 3
+#define pinTecla2 5
 
-int frec, vol;
-
-uint8_t value=0, waveForm=0;
+uint8_t waveForm=0;
 bool semaforo = false;
+
+Button botonFormaOnda(FormaOndaPin);
+Button tecla1(pinTecla1);
+Button tecla2(pinTecla2);
 
 void setup() {
   Serial.begin(9600);
   delay(1000);
   
-  *AGT0_AGTCR = 0; // disable Millis counter, delay etc. don't want this Interrupt messing up output stability
+  //*AGT0_AGTCR = 0; // disable Millis counter, delay etc. don't want this Interrupt messing up output stability
+
+  synthSetFrecuency(100);
   
   // now setup the sound                                                
   synthSetupDac();
-  synthBeginTimer(37000); // sets the sample rate as CD quality
+  synthBeginTimer(44100);
 
-  pinMode(2, INPUT_PULLUP);
+  //pinMode(2, INPUT_PULLUP);
   pinMode(LED_BUILTIN, OUTPUT);
 }
 
 void loop() {
-  frec = analogRead(FrecuenciaPin);
-  frec = map(frec, 0, 1024, 20, 3000);
-    synthSetFrecuency(frec);
+  synthSetFrecuency(map(analogRead(FrecuenciaPin), 0, 1024, 20, 3000));
 
-  vol = analogRead(VolumenPin);
-  synthSetVolume(vol);
+  synthSetVolume(analogRead(VolumenPin));
 
-
-  value = digitalRead(2);
-  
-  if (!value) {
-    if(!semaforo){
-      semaforo = true;
-      waveForm++;
-      if(waveForm >= 3) waveForm = 0;
-      synthSetWaveForm(waveForm);
-    }}
+  //  
+  // set the current waveform clicking the button
+  //
+  if (botonFormaOnda.isPressed()){
+      if(!semaforo){
+       semaforo = true;
+       waveForm++;
+        if(waveForm >= 3) waveForm = 0;
+        synthSetWaveForm(waveForm);
+      }
+  }   
   else semaforo = false; 
+
+  //
+  // each key plays a different wave
+  //
+  synthKeysState(0, tecla1.isPressed());
+
+  synthKeysState(1, tecla2.isPressed());
   
   //  ADSR EXAMPLE BUTTONs CODE
   /*if (value == HIGH) 
@@ -56,5 +68,4 @@ void loop() {
     if (cuenta < 10)
       cuenta = cuenta + 1;
     else if (cuenta == 10);*/
-
 }

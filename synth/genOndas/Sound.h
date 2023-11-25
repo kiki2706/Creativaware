@@ -21,17 +21,22 @@
 //-------------------------------
 //    SYNTH SOFTWARE VARIABLES
 //-------------------------------
-volatile float samplerFrecuency = 44100;
-volatile float sampleVolume = 1;
-volatile float frecuency = 500;
-volatile int SIGNAL_SIZE = 4096;
-volatile int newSIGNAL_SIZE = 4096;
+const uint32_t  SAMPLE_ARRAY_SIZE = 2300;
+volatile uint16_t sampleArray[NUMBER_OF_KEYS][SAMPLE_ARRAY_SIZE];//array that save the waveforms   INICIALIZA LA MIERDA ESTA NOE
+volatile uint16_t sampleIndex[NUMBER_OF_KEYS] = {0,0,0,0}; // sampler counter
+volatile uint16_t NUMBER_OF_SAMPLES[NUMBER_OF_KEYS];//number of samples: calculate using sample time and frecuency
 
-volatile long int NUMBER_OF_SAMPLES = samplerFrecuency/frecuency;//
-volatile long int sampleIndex = 0; 
+volatile float samplerFrecuency = 44100;
+volatile uint16_t SIGNAL_MAX_SIZE = 4096;  // hardware max value
+volatile uint16_t LOCAL_SIGNAL_SIZE = SIGNAL_MAX_SIZE >> 4;// max value for each key (then, change 4 by countKeyPressed)
+volatile uint16_t newSIGNAL_MAX_SIZE = 4096; // when the max changes
  
-uint8_t kindOfWave = 0;
-uint8_t keys[NUMBER_OF_KEYS];
+volatile uint8_t kindOfWave = 2;
+volatile uint8_t keys[NUMBER_OF_KEYS] = {0,0,0,0};
+volatile uint8_t countKeysPressed;
+
+volatile uint16_t currentFrecuency = 0;
+volatile uint8_t filtroFrecuency = 0;
 
 
 //-------------------------------------
@@ -39,21 +44,48 @@ uint8_t keys[NUMBER_OF_KEYS];
 //-------------------------------------
 void synthKeysState(uint8_t pressedKey, uint8_t keyState){
   keys[pressedKey] = keyState;
+  uint8_t TEMP_countKeysPressed = 0;
+  
+  for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++)
+    if(keys[i]) TEMP_countKeysPressed++; 
+
+  countKeysPressed = TEMP_countKeysPressed;// semi atomic!!
 }
 
 
 //---------------------------------
 //    SET FRECUENCY OSCILLATOR
 //---------------------------------
-void synthSetFrecuency(uint32_t frecuency){
-  NUMBER_OF_SAMPLES = samplerFrecuency/frecuency;
+void synthSetFrecuency(uint16_t frecuency){
+  if(frecuency != currentFrecuency) filtroFrecuency++;
+  if(filtroFrecuency == 3){
+  filtroFrecuency = 0;
+    
+    for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){
+      NUMBER_OF_SAMPLES[i] = samplerFrecuency/(frecuency-(i*20));//CAMBIAR LA RELACION DE LAS FRECUENCIAS
+      
+      for(uint16_t j = 0; j < NUMBER_OF_SAMPLES[i]; j++){
+        if(kindOfWave == 0)// Triangle wave
+         if(j <= NUMBER_OF_SAMPLES[i] >> 1) sampleArray[i][j] = (2 * j * (double)(LOCAL_SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES[i]));
+           else sampleArray[i][j] = (2 * (NUMBER_OF_SAMPLES[i] - j) * (double)(LOCAL_SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES[i]));
+        
+        else if(kindOfWave == 1)// Square wave
+         if(j <= NUMBER_OF_SAMPLES[i] >> 1) sampleArray[i][j] = 0;
+           else sampleArray[i][j] = LOCAL_SIGNAL_SIZE;
+           
+         else if(kindOfWave == 2)// SawTooth wave
+          sampleArray[i][j] = (j * (double)(LOCAL_SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES[i]));
+      }//for sampler
+    }//for all keys  //AQUI ARRIBA VA LA LOCAL NOEWI ACUERDATE CARAJOS
+  }
+  currentFrecuency = frecuency;
 }
 
-//----------------------
-//    SET SYTH VOLUME
-//----------------------
+//--------------------------
+//    SET SYTH MAX VOLUME 
+//---------------------------
 void synthSetVolume(int newVolume){
-  newSIGNAL_SIZE = map(newVolume, 0, 1024, 0, DAC_RESOLUTION);
+  newSIGNAL_MAX_SIZE = map(newVolume, 0, 1024, 0, DAC_RESOLUTION);
 }
 
 //-----------------------------------
@@ -70,26 +102,30 @@ void synthSetWaveForm(uint8_t wave){
 //  CALLBACK ISR USED BY TIMER
 //---------------------------------
 void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
-  uint16_t lastSample;
+  uint16_t lastSample[NUMBER_OF_KEYS], finalSample = 0;
+
+  for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){
+    if(keys[i]){// if i is clicked...
+      //
+      // when a period finishes...
+      //
+      sampleIndex[i]++;
+      
+      if(sampleIndex[i] >= NUMBER_OF_SAMPLES[i]){
+         sampleIndex[i] = 0;
+         SIGNAL_MAX_SIZE = newSIGNAL_MAX_SIZE;
+         LOCAL_SIGNAL_SIZE = (uint16_t)((double)SIGNAL_MAX_SIZE / (double)countKeysPressed);
+      }
+      lastSample[i] = sampleArray[i][sampleIndex[i]];
+    }
+    else lastSample[i] = 0;
+
+    
+     finalSample += lastSample[i];
+  }// for all keys[i]
+
   
-  if(sampleIndex >= NUMBER_OF_SAMPLES){
-    sampleIndex = 0;//When period finishes...
-    SIGNAL_SIZE = newSIGNAL_SIZE;
-  }
-  sampleIndex++;
-  
-  if(kindOfWave == 0)// Triangle wave
-    if(sampleIndex <= NUMBER_OF_SAMPLES/2) lastSample = (2 * sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
-      else lastSample = (2 * (NUMBER_OF_SAMPLES - sampleIndex) * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
-  else if(kindOfWave == 1)// Square wave
-    if(sampleIndex <= NUMBER_OF_SAMPLES/2) lastSample = 0;
-      else lastSample = SIGNAL_SIZE;
-  else if(kindOfWave == 2)// SawTooth wave
-    lastSample = (sampleIndex * (double)(SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES));
-  else if(kindOfWave == 3)//Sine wave
-    lastSample = 0;// XD por lo pront
-  
-  *DAC12_DADR0 = lastSample;   // DAC update DAC ignores top 4 bits
+  *DAC12_DADR0 = finalSample;   // DAC update DAC ignores top 4 bits
 } 
 
 //---------------------------------
