@@ -9,7 +9,8 @@ FspTimer audio_timer;
 #define VolumenPin A2
 #define FormaOndaPin 2
 #define pinTecla1 3
-#define pinTecla2 5
+#define pinTecla2 4
+#define pinTecla3 5
 
 uint8_t waveForm=0;
 bool semaforo = false;
@@ -17,10 +18,12 @@ bool semaforo = false;
 Button botonFormaOnda(FormaOndaPin);
 Button tecla1(pinTecla1);
 Button tecla2(pinTecla2);
+Button tecla3(pinTecla3);
 
 void setup() {
   Serial.begin(9600);
   delay(1000);
+  pinMode(LED_BUILTIN, OUTPUT);
   
   //*AGT0_AGTCR = 0; // disable Millis counter, delay etc. don't want this Interrupt messing up output stability
 
@@ -58,6 +61,8 @@ void loop() {
   synthKeysState(0, tecla1.isPressed());
 
   synthKeysState(1, tecla2.isPressed());
+  
+  synthKeysState(2, tecla3.isPressed());
   
   //  ADSR EXAMPLE BUTTONs CODE
   /*if (value == HIGH) 

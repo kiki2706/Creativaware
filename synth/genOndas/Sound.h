@@ -1,15 +1,15 @@
-//**********************************************************************
+//****************************************************************************************
 //
 //
-//                DIY     SYNTH     ARDUINO    BASED
+//                        DIY     SYNTH     ARDUINO    BASED
 //
-//                           :)   ENJOY!!!
+//                                  :)   ENJOY!!!
 //
-//  Library developed starting from Grumpy Mike's code PON EL ENLACE NOE
-//   and hightly modified by Noé Paniagua and Kiki Gómez, UMA students.
+//  Library developed starting from Grumpy Mike's code PON EL ENLACE NOE  JJAJJDJJFDHSJDH
+//   and hightly modified by Noé Paniagua and Kiki Gómez, Electronica Creativita students.
 //
 //
-//**********************************************************************
+//**************************************************************************************
 #include "FspTimer.h"
 
 //-------------------------------------
@@ -26,43 +26,71 @@ volatile uint16_t sampleArray[NUMBER_OF_KEYS][SAMPLE_ARRAY_SIZE];//array that sa
 volatile uint16_t sampleIndex[NUMBER_OF_KEYS] = {0,0,0,0}; // sampler counter
 volatile uint16_t NUMBER_OF_SAMPLES[NUMBER_OF_KEYS];//number of samples: calculate using sample time and frecuency
 
-volatile float samplerFrecuency = 44100;
+volatile uint32_t samplerFrecuency = 44100;
 volatile uint16_t SIGNAL_MAX_SIZE = 4096;  // hardware max value
+volatile uint16_t newSIGNAL_MAX_SIZE = 4096; // hardware max readed value
 volatile uint16_t LOCAL_SIGNAL_SIZE = SIGNAL_MAX_SIZE >> 4;// max value for each key (then, change 4 by countKeyPressed)
-volatile uint16_t newSIGNAL_MAX_SIZE = 4096; // when the max changes
- 
+
 volatile uint8_t kindOfWave = 2;
 volatile uint8_t keys[NUMBER_OF_KEYS] = {0,0,0,0};
+volatile uint8_t lastKeys[NUMBER_OF_KEYS] = {0,0,0,0};
 volatile uint8_t countKeysPressed;
 
 volatile uint16_t currentFrecuency = 0;
 volatile uint8_t filtroFrecuency = 0;
 
+// ADSR
+volatile uint16_t ADSR_TIME = 2000;
+
+typedef struct ADSR{
+  volatile uint8_t semAttack;
+  volatile uint8_t semRelease;
+  volatile uint16_t timingHighFrec;
+  volatile uint16_t timing;
+};
+
+ADSR adsr[NUMBER_OF_KEYS];
 
 //-------------------------------------
 //    N-KEY STATE PRESSED/UNPRESSED
 //-------------------------------------
 void synthKeysState(uint8_t pressedKey, uint8_t keyState){
   keys[pressedKey] = keyState;
-  uint8_t TEMP_countKeysPressed = 0;
-  
-  for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++)
-    if(keys[i]) TEMP_countKeysPressed++; 
 
-  countKeysPressed = TEMP_countKeysPressed;// semi atomic!!
+  if(lastKeys[pressedKey] != keys[pressedKey]){
+    uint8_t TEMP_countKeysPressed = 0;
+
+    if(keys[pressedKey] == 1){ 
+      adsr[pressedKey].semAttack = 1; 
+      adsr[pressedKey].semRelease = 0;
+    }
+    else {
+      adsr[pressedKey].semRelease = 1; 
+      adsr[pressedKey].semAttack = 0;
+      digitalWrite(LED_BUILTIN, HIGH);
+    }
+    
+    for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++)
+     if(keys[i]) TEMP_countKeysPressed++; 
+     
+    countKeysPressed = TEMP_countKeysPressed;// semi atomic!!
+  }
+
+  lastKeys[pressedKey] = keys[pressedKey];
 }
 
 
-//---------------------------------
-//    SET FRECUENCY OSCILLATOR
-//---------------------------------
+//-----------------------------------------------------------
+//    SET FRECUENCY OSCILLATOR (recalculate waveform tables)
+//-----------------------------------------------------------
 void synthSetFrecuency(uint16_t frecuency){
   if(frecuency != currentFrecuency) filtroFrecuency++;
+  
   if(filtroFrecuency == 3){
-  filtroFrecuency = 0;
+    filtroFrecuency = 0;
     
     for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){
-      NUMBER_OF_SAMPLES[i] = samplerFrecuency/(frecuency-(i*20));//CAMBIAR LA RELACION DE LAS FRECUENCIAS
+      NUMBER_OF_SAMPLES[i] = samplerFrecuency/(frecuency-(i*200));//CAMBIAR LA RELACION DE LAS FRECUENCIAS
       
       for(uint16_t j = 0; j < NUMBER_OF_SAMPLES[i]; j++){
         if(kindOfWave == 0)// Triangle wave
@@ -71,13 +99,18 @@ void synthSetFrecuency(uint16_t frecuency){
         
         else if(kindOfWave == 1)// Square wave
          if(j <= NUMBER_OF_SAMPLES[i] >> 1) sampleArray[i][j] = 0;
-           else sampleArray[i][j] = LOCAL_SIGNAL_SIZE;
+           else sampleArray[i][j] = map(adsr[i].timing,0,ADSR_TIME,0,LOCAL_SIGNAL_SIZE);
            
          else if(kindOfWave == 2)// SawTooth wave
-          sampleArray[i][j] = (j * (double)(LOCAL_SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES[i]));
+          sampleArray[i][j] = (j * (uint16_t)(map(adsr[i].timing,0,ADSR_TIME,0,) / (double)NUMBER_OF_SAMPLES[i]));
+          
       }//for sampler
-    }//for all keys  //AQUI ARRIBA VA LA LOCAL NOEWI ACUERDATE CARAJOS
+    }//for all keys  
   }
+  Serial.println("------");
+  Serial.println((uint16_t)uint16Map(adsr[0].timing,0,ADSR_TIME,0,LOCAL_SIGNAL_SIZE));
+  Serial.println(adsr[0].timing);
+  Serial.println("------");
   currentFrecuency = frecuency;
 }
 
@@ -92,7 +125,7 @@ void synthSetVolume(int newVolume){
 //    DIFFERENTS WAVEFORMS SETS
 //
 //    [0]-> Triangle    [1]-> Square
-//    [2]-> SawTooth    [3]-> Sine
+//    [2]-> SawTooth    [3]-> XD(sine uwu)NOT YET
 //-----------------------------------
 void synthSetWaveForm(uint8_t wave){
   kindOfWave = wave;
@@ -105,10 +138,19 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
   uint16_t lastSample[NUMBER_OF_KEYS], finalSample = 0;
 
   for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){
-    if(keys[i]){// if i is clicked...
-      //
-      // when a period finishes...
-      //
+    if(adsr[i].timingHighFrec++ == (samplerFrecuency >> 9)){// huge time ADSR
+      adsr[i].timingHighFrec = 0;
+      if(adsr[i].timing <= ADSR_TIME && adsr[i].semAttack){
+        adsr[i].timing++;
+        if(adsr[i].timing >= ADSR_TIME) adsr[i].semAttack = 0;
+      }//attack
+      else if(adsr[i].timing > 0 && adsr[i].semRelease){
+        adsr[i].timing--;
+        if(adsr[i].timing == 0) {adsr[i].semRelease = 0; digitalWrite(LED_BUILTIN, LOW);}
+      }//release
+    }//adsr
+    
+    if(keys[i] || adsr[i].semRelease){// if i is clicked or release active
       sampleIndex[i]++;
       
       if(sampleIndex[i] >= NUMBER_OF_SAMPLES[i]){
@@ -116,6 +158,7 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
          SIGNAL_MAX_SIZE = newSIGNAL_MAX_SIZE;
          LOCAL_SIGNAL_SIZE = (uint16_t)((double)SIGNAL_MAX_SIZE / (double)countKeysPressed);
       }
+      
       lastSample[i] = sampleArray[i][sampleIndex[i]];
     }
     else lastSample[i] = 0;
@@ -125,7 +168,7 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
   }// for all keys[i]
 
   
-  *DAC12_DADR0 = finalSample;   // DAC update DAC ignores top 4 bits
+  *DAC12_DADR0 = finalSample;  
 } 
 
 //---------------------------------
