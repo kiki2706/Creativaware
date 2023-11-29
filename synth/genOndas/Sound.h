@@ -16,7 +16,9 @@
 //    SYNTH HARDWARE CONFIGURATIONS
 //-------------------------------------
 #define NUMBER_OF_KEYS 4
-#define DAC_RESOLUTION 4095
+#define DAC_RESOLUTION 4090
+
+const float ADSR_div[20] = {1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3};
 
 //-------------------------------
 //    SYNTH SOFTWARE VARIABLES
@@ -27,8 +29,8 @@ volatile uint16_t sampleIndex[NUMBER_OF_KEYS] = {0,0,0,0}; // sampler counter
 volatile uint16_t NUMBER_OF_SAMPLES[NUMBER_OF_KEYS];//number of samples: calculate using sample time and frecuency
 
 volatile uint32_t samplerFrecuency = 44100;
-volatile uint16_t SIGNAL_MAX_SIZE = 4096;  // hardware max value
-volatile uint16_t newSIGNAL_MAX_SIZE = 4096; // hardware max readed value
+volatile uint16_t SIGNAL_MAX_SIZE = 4090;  // hardware max value
+volatile uint16_t newSIGNAL_MAX_SIZE = 4090; // hardware max readed value
 volatile uint16_t LOCAL_SIGNAL_SIZE = SIGNAL_MAX_SIZE >> 4;// max value for each key (then, change 4 by countKeyPressed)
 
 volatile uint8_t kindOfWave = 2;
@@ -40,7 +42,7 @@ volatile uint16_t currentFrecuency = 0;
 volatile uint8_t filtroFrecuency = 0;
 
 // ADSR
-volatile uint16_t ADSR_TIME = 2000;
+volatile uint16_t ADSR_TIME = 20;
 
 typedef struct ADSR{
   volatile uint8_t semAttack;
@@ -67,11 +69,10 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
     else {
       adsr[pressedKey].semRelease = 1; 
       adsr[pressedKey].semAttack = 0;
-      digitalWrite(LED_BUILTIN, HIGH);
     }
     
     for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++)
-     if(keys[i]) TEMP_countKeysPressed++; 
+     if(keys[i] || adsr[i].semRelease) TEMP_countKeysPressed++; 
      
     countKeysPressed = TEMP_countKeysPressed;// semi atomic!!
   }
@@ -99,18 +100,14 @@ void synthSetFrecuency(uint16_t frecuency){
         
         else if(kindOfWave == 1)// Square wave
          if(j <= NUMBER_OF_SAMPLES[i] >> 1) sampleArray[i][j] = 0;
-           else sampleArray[i][j] = map(adsr[i].timing,0,ADSR_TIME,0,LOCAL_SIGNAL_SIZE);
+           else sampleArray[i][j] = LOCAL_SIGNAL_SIZE;
            
          else if(kindOfWave == 2)// SawTooth wave
-          sampleArray[i][j] = (j * (uint16_t)(map(adsr[i].timing,0,ADSR_TIME,0,) / (double)NUMBER_OF_SAMPLES[i]));
+          sampleArray[i][j] = (j * (uint16_t)(LOCAL_SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES[i]));
           
       }//for sampler
     }//for all keys  
   }
-  Serial.println("------");
-  Serial.println((uint16_t)uint16Map(adsr[0].timing,0,ADSR_TIME,0,LOCAL_SIGNAL_SIZE));
-  Serial.println(adsr[0].timing);
-  Serial.println("------");
   currentFrecuency = frecuency;
 }
 
@@ -146,7 +143,7 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
       }//attack
       else if(adsr[i].timing > 0 && adsr[i].semRelease){
         adsr[i].timing--;
-        if(adsr[i].timing == 0) {adsr[i].semRelease = 0; digitalWrite(LED_BUILTIN, LOW);}
+        if(adsr[i].timing == 0) adsr[i].semRelease = 0;
       }//release
     }//adsr
     
@@ -159,12 +156,12 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
          LOCAL_SIGNAL_SIZE = (uint16_t)((double)SIGNAL_MAX_SIZE / (double)countKeysPressed);
       }
       
-      lastSample[i] = sampleArray[i][sampleIndex[i]];
+      lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]/(double)(ADSR_div[ADSR_TIME - adsr[i].timing]));
     }
     else lastSample[i] = 0;
 
     
-     finalSample += lastSample[i];
+    finalSample += lastSample[i];
   }// for all keys[i]
 
   
