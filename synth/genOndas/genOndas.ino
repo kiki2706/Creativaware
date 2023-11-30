@@ -23,7 +23,6 @@ Button tecla3(pinTecla3);
 Button tecla4(pinTecla4);
 
 void setup() {
-  
   delay(1000);
   
   //*AGT0_AGTCR = 0; // disable Millis counter, delay etc. don't want this Interrupt messing up output stability
@@ -37,8 +36,6 @@ void setup() {
 }
 
 void loop() {
-  
-
   synthSetFrecuency(map(analogRead(FrecuenciaPin), 0, 1024, 100, 3000));
 
   synthSetVolume(analogRead(VolumenPin));
@@ -66,4 +63,13 @@ void loop() {
   synthKeysState(2, tecla3.isPressed());
 
   synthKeysState(3, tecla4.isPressed());
+
+  
+//PONER EN UNA FUNCION EN ALGUN LAO XDIOS
+uint8_t TEMP_countKeysPressed = 0;
+   for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++)
+     if(keys[i] || adsr[i].semRelease) TEMP_countKeysPressed++; 
+
+    if(!TEMP_countKeysPressed)countKeysPressed = 1;// semi atomic!!
+    else countKeysPressed = TEMP_countKeysPressed;
 }
