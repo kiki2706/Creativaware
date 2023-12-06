@@ -38,20 +38,33 @@ volatile uint8_t keys[NUMBER_OF_KEYS] = {0,0,0,0};
 volatile uint8_t lastKeys[NUMBER_OF_KEYS] = {0,0,0,0};
 uint8_t countKeysPressed;
 
-volatile uint16_t currentFrecuency = 0;
-volatile uint8_t filtroFrecuency = 0;
+uint16_t currentFrecuency = 0;
+uint8_t filtroFrecuency = 0;
 
-// ADSR
-volatile uint16_t ADSR_TIME = 20;
+//*********ADSR VARIABLES**********
+#define MAX_TIME 2
+#define HUGE_TIMER_SCALE 9
 
 typedef struct ADSR{
-  volatile uint8_t semAttack;
-  volatile uint8_t semRelease;
-  volatile uint16_t timingHighFrec;
-  volatile uint16_t timing;
+  uint8_t semAttack;
+  uint8_t semDecay;
+  uint8_t semSustain;
+  uint8_t semRelease;
+  uint16_t timingHighFrec;
+  uint16_t timing;
 };
 
 ADSR adsr[NUMBER_OF_KEYS];
+
+
+typedef struct ENVELOPE{
+  uint8_t mod[200];
+  uint16_t value;
+};
+ENVELOPE envelopeAttack;
+ENVELOPE envelopeDecay;
+float envelopeSustainMod;
+ENVELOPE envelopeRelease;
 
 //-------------------------------------
 //    N-KEY STATE PRESSED/UNPRESSED
@@ -62,17 +75,72 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
   if(lastKeys[pressedKey] != keys[pressedKey]){
     if(keys[pressedKey] == 1){ 
       adsr[pressedKey].semAttack = 1; 
-      adsr[pressedKey].semRelease = 0;
     }
     else {
+      adsr[pressedKey].semSustain = 0;
       adsr[pressedKey].semRelease = 1; 
-      adsr[pressedKey].semAttack = 0;
     }
   }
 
   lastKeys[pressedKey] = keys[pressedKey];
 }
 
+//-------------------
+//    ADSR INICILICE
+//-------------------
+/*void synthADSRinit(float rate){
+  //aqui hariamos lo que tengo en la libretita, calcular la resolucion y demas del adsr
+}*/
+
+//-------------------
+//    ADSR REFRESH
+//-------------------
+void synthADSR(uint16_t AttackPot, uint16_t DecayPot, uint16_t SustainPot, uint16_t ReleasePot){
+  float resolution, tempTime, counterFloat = 0;
+  
+  //
+  //ATTACK
+  //
+  tempTime = map(AttackPot, 0, 1024, 0, MAX_TIME);
+  envelopeAttack.value = (float)tempTime / (float)(0.0116);
+  resolution = 1 / (float)envelopeAttack.value;
+  
+  for(uint8_t i = 0; i < envelopeAttack.value; i++){
+    envelopeAttack.mod[i] = counterFloat;
+    counterFloat += resolution;
+  }
+
+  //
+  //SUSTAIN
+  //
+  envelopeSustainMod = map(SustainPot, 0 , 1024, 0, 1);
+
+  //
+  //DECAY
+  //
+  tempTime = map(DecayPot, 0, 1024, 0, MAX_TIME);
+  envelopeDecay.value = (float)tempTime / (float)(0.0116);
+  resolution = (float)(1-envelopeSustainMod) / (float)envelopeDecay.value;
+  counterFloat = 1;
+  
+  for(uint8_t i = 0; i < envelopeDecay.value; i++){
+    envelopeDecay.mod[i] = counterFloat;
+    counterFloat -= resolution;
+  }
+
+  //
+  //RELEASE
+  //
+  tempTime = map(ReleasePot, 0, 1024, 0, MAX_TIME);
+  envelopeRelease.value = (float)tempTime / (float)(0.0116);
+  resolution = (float)(envelopeSustainMod) / (float)envelopeRelease.value;
+  counterFloat = envelopeSustainMod;
+
+  for(uint8_t i = 0; i < envelopeRelease.value; i++){
+    envelopeRelease.mod[i] = counterFloat;
+    counterFloat -= resolution;
+  }
+}
 
 //-----------------------------------------------------------
 //    SET FRECUENCY OSCILLATOR (recalculate waveform tables)
@@ -88,15 +156,15 @@ void synthSetFrecuency(uint16_t frecuency){
       
       for(uint16_t j = 0; j < NUMBER_OF_SAMPLES[i]; j++){
         if(kindOfWave == 0)// Triangle wave
-         if(j <= NUMBER_OF_SAMPLES[i] >> 1) sampleArray[i][j] = (2 * j * (double)(LOCAL_SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES[i]));
-           else sampleArray[i][j] = (2 * (NUMBER_OF_SAMPLES[i] - j) * (double)(LOCAL_SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES[i]));
+         if(j <= NUMBER_OF_SAMPLES[i] >> 1) sampleArray[i][j] = (2 * j * (float)(LOCAL_SIGNAL_SIZE / (float)NUMBER_OF_SAMPLES[i]));
+           else sampleArray[i][j] = (2 * (NUMBER_OF_SAMPLES[i] - j) * (float)(LOCAL_SIGNAL_SIZE / (float)NUMBER_OF_SAMPLES[i]));
         
         else if(kindOfWave == 1)// Square wave
          if(j <= NUMBER_OF_SAMPLES[i] >> 1) sampleArray[i][j] = 0;
            else sampleArray[i][j] = LOCAL_SIGNAL_SIZE;
            
          else if(kindOfWave == 2)// SawTooth wave
-          sampleArray[i][j] = (j * (uint16_t)(LOCAL_SIGNAL_SIZE / (double)NUMBER_OF_SAMPLES[i]));
+          sampleArray[i][j] = (j * (uint16_t)(LOCAL_SIGNAL_SIZE / (float)NUMBER_OF_SAMPLES[i]));
           
       }//for sampler
     }//for all keys  
@@ -127,31 +195,72 @@ void synthSetWaveForm(uint8_t wave){
 void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
   uint16_t lastSample[NUMBER_OF_KEYS], finalSample = 0;
 
-  for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){    
-
-      if(adsr[i].timingHighFrec++ == (samplerFrecuency >> 9)){// huge time ADSR
-         adsr[i].timingHighFrec = 0;
-         if(adsr[i].timing <= ADSR_TIME && adsr[i].semAttack){
-           adsr[i].timing++;
-           if(adsr[i].timing >= ADSR_TIME) adsr[i].semAttack = 0;
-         }//attack
-         else if(adsr[i].timing > 0 && adsr[i].semRelease){
-            adsr[i].timing--;
-            if(adsr[i].timing == 0) adsr[i].semRelease = 0;
-         }//release
-      }//adsr
+  for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){  
       
-    if(keys[i] || adsr[i].semRelease){// if i is clicked or release active
+    if(keys[i] || adsr[i].semRelease){// if clicked...
       sampleIndex[i]++;
       
-      if(sampleIndex[i] >= NUMBER_OF_SAMPLES[i]){
+      if(sampleIndex[i] >= NUMBER_OF_SAMPLES[i]){//if a period finishes
          sampleIndex[i] = 0;
          SIGNAL_MAX_SIZE = newSIGNAL_MAX_SIZE;
-         LOCAL_SIGNAL_SIZE = (uint16_t)((double)SIGNAL_MAX_SIZE / (double)countKeysPressed);
+         LOCAL_SIGNAL_SIZE = (uint16_t)((float)SIGNAL_MAX_SIZE / (float)countKeysPressed);
       }
-      
-      lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]/(double)(ADSR_div[ADSR_TIME - adsr[i].timing]));
-      //lastSample[i] = sampleArray[i][sampleIndex[i]];
+
+      //
+      //HUGE TIMERERERER
+      //
+      if(adsr[i].timingHighFrec++ == (samplerFrecuency >> HUGE_TIMER_SCALE)){
+         adsr[i].timingHighFrec = 0;
+
+         //
+         // ATTACK
+         //
+         if(adsr[i].timing <= envelopeAttack.value && adsr[i].semAttack){
+           adsr[i].timing++;
+           lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]*(float)envelopeAttack.mod[adsr[i].timing]);
+           
+           if(adsr[i].timing > envelopeAttack.value){//finish attack
+            adsr[i].timing = 0;
+            adsr[i].semAttack = 0;
+            adsr[i].semDecay = 1;
+           }
+         }
+
+         //
+         // DECAY
+         //
+         else if(adsr[i].timing <= envelopeDecay.value && adsr[i].semDecay){
+          adsr[i].timing++;
+          lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]*(float)envelopeDecay.mod[adsr[i].timing]);
+          
+          if(adsr[i].timing > envelopeDecay.value){//finish decay
+            adsr[i].timing = 0;
+            adsr[i].semDecay = 0;
+            adsr[i].semSustain = 1;
+          }
+        }
+
+        //
+        // SUSTAIN
+        //
+        else if(adsr[i].semSustain){
+          lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]*(float)envelopeSustainMod);
+        }
+
+        //
+        // RELEASE
+        // 
+        else if(adsr[i].timing <= envelopeRelease.value && adsr[i].semRelease){//if release
+          adsr[i].timing++;
+          lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]*(float)envelopeRelease.mod[adsr[i].timing]);
+          
+          if(adsr[i].timing > envelopeDecay.value){//finish decay
+            adsr[i].timing = 0;
+            adsr[i].semRelease = 0;
+          }
+         }//release
+         
+      }//end huge timer
     }
     else lastSample[i] = 0;
 

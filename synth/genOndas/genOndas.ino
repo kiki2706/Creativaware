@@ -31,8 +31,8 @@ void setup() {
   
   // now setup the sound                                                
   synthSetupDac();
+  synthADSR(1000,1000,200,1000);
   synthBeginTimer(44100);
-  
 }
 
 void loop() {
@@ -66,6 +66,9 @@ void loop() {
 
   
 //PONER EN UNA FUNCION EN ALGUN LAO XDIOS
+//
+// La sabedora de cuantas teclas estansiendotocadas punto com
+//
 uint8_t TEMP_countKeysPressed = 0;
    for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++)
      if(keys[i] || adsr[i].semRelease) TEMP_countKeysPressed++; 
