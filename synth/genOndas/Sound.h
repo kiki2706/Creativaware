@@ -36,7 +36,7 @@ volatile uint16_t LOCAL_SIGNAL_SIZE = SIGNAL_MAX_SIZE >> 4;// max value for each
 volatile uint8_t kindOfWave = 2;
 volatile uint8_t keys[NUMBER_OF_KEYS] = {0,0,0,0};
 volatile uint8_t lastKeys[NUMBER_OF_KEYS] = {0,0,0,0};
-volatile uint8_t countKeysPressed;
+uint8_t countKeysPressed;
 
 volatile uint16_t currentFrecuency = 0;
 volatile uint8_t filtroFrecuency = 0;
@@ -60,8 +60,6 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
   keys[pressedKey] = keyState;
 
   if(lastKeys[pressedKey] != keys[pressedKey]){
-    uint8_t TEMP_countKeysPressed = 0;
-
     if(keys[pressedKey] == 1){ 
       adsr[pressedKey].semAttack = 1; 
       adsr[pressedKey].semRelease = 0;
@@ -70,11 +68,6 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
       adsr[pressedKey].semRelease = 1; 
       adsr[pressedKey].semAttack = 0;
     }
-    
-    for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++)
-     if(keys[i] || adsr[i].semRelease) TEMP_countKeysPressed++; 
-     
-    countKeysPressed = TEMP_countKeysPressed;// semi atomic!!
   }
 
   lastKeys[pressedKey] = keys[pressedKey];
@@ -134,19 +127,20 @@ void synthSetWaveForm(uint8_t wave){
 void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
   uint16_t lastSample[NUMBER_OF_KEYS], finalSample = 0;
 
-  for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){
-    if(adsr[i].timingHighFrec++ == (samplerFrecuency >> 9)){// huge time ADSR
-      adsr[i].timingHighFrec = 0;
-      if(adsr[i].timing <= ADSR_TIME && adsr[i].semAttack){
-        adsr[i].timing++;
-        if(adsr[i].timing >= ADSR_TIME) adsr[i].semAttack = 0;
-      }//attack
-      else if(adsr[i].timing > 0 && adsr[i].semRelease){
-        adsr[i].timing--;
-        if(adsr[i].timing == 0) adsr[i].semRelease = 0;
-      }//release
-    }//adsr
-    
+  for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){    
+
+      if(adsr[i].timingHighFrec++ == (samplerFrecuency >> 9)){// huge time ADSR
+         adsr[i].timingHighFrec = 0;
+         if(adsr[i].timing <= ADSR_TIME && adsr[i].semAttack){
+           adsr[i].timing++;
+           if(adsr[i].timing >= ADSR_TIME) adsr[i].semAttack = 0;
+         }//attack
+         else if(adsr[i].timing > 0 && adsr[i].semRelease){
+            adsr[i].timing--;
+            if(adsr[i].timing == 0) adsr[i].semRelease = 0;
+         }//release
+      }//adsr
+      
     if(keys[i] || adsr[i].semRelease){// if i is clicked or release active
       sampleIndex[i]++;
       
@@ -157,6 +151,7 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
       }
       
       lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]/(double)(ADSR_div[ADSR_TIME - adsr[i].timing]));
+      //lastSample[i] = sampleArray[i][sampleIndex[i]];
     }
     else lastSample[i] = 0;
 
