@@ -18,8 +18,6 @@
 #define NUMBER_OF_KEYS 4
 #define DAC_RESOLUTION 4090
 
-const float ADSR_div[20] = {1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3};
-
 //-------------------------------
 //    SYNTH SOFTWARE VARIABLES
 //-------------------------------
@@ -51,20 +49,24 @@ typedef struct ADSR{
   uint8_t semSustain;
   uint8_t semRelease;
   uint16_t timingHighFrec;
-  uint16_t timing;
+  float mod;
 };
 
 ADSR adsr[NUMBER_OF_KEYS];
 
 
 typedef struct ENVELOPE{
-  uint8_t mod[200];
-  uint16_t value;
+  float resolution;
 };
 ENVELOPE envelopeAttack;
 ENVELOPE envelopeDecay;
 float envelopeSustainMod;
 ENVELOPE envelopeRelease;
+
+float mapf(float x, float in_min, float in_max, float out_min, float out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 
 //-------------------------------------
 //    N-KEY STATE PRESSED/UNPRESSED
@@ -77,7 +79,6 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
       adsr[pressedKey].semAttack = 1; 
     }
     else {
-      adsr[pressedKey].semSustain = 0;
       adsr[pressedKey].semRelease = 1; 
     }
   }
@@ -96,50 +97,36 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
 //    ADSR REFRESH
 //-------------------
 void synthADSR(uint16_t AttackPot, uint16_t DecayPot, uint16_t SustainPot, uint16_t ReleasePot){
-  float resolution, tempTime, counterFloat = 0;
+  float tempTime, nSteps = 0;
   
   //
   //ATTACK
   //
-  tempTime = map(AttackPot, 0, 1024, 0, MAX_TIME);
-  envelopeAttack.value = (float)tempTime / (float)(0.0116);
-  resolution = 1 / (float)envelopeAttack.value;
+  tempTime = mapf(AttackPot, 0, 1024, 0, MAX_TIME);
+  nSteps = (float)tempTime / (float)(0.01);
+  envelopeAttack.resolution = (float)1/(float)(nSteps);
   
-  for(uint8_t i = 0; i < envelopeAttack.value; i++){
-    envelopeAttack.mod[i] = counterFloat;
-    counterFloat += resolution;
-  }
+  
 
   //
   //SUSTAIN
   //
-  envelopeSustainMod = map(SustainPot, 0 , 1024, 0, 1);
+  envelopeSustainMod = mapf(SustainPot, 0 , 1024, 0, 1);
 
   //
   //DECAY
   //
-  tempTime = map(DecayPot, 0, 1024, 0, MAX_TIME);
-  envelopeDecay.value = (float)tempTime / (float)(0.0116);
-  resolution = (float)(1-envelopeSustainMod) / (float)envelopeDecay.value;
-  counterFloat = 1;
+  tempTime = mapf(DecayPot, 0, 1024, 0, MAX_TIME);
+  nSteps = (float)tempTime / (float)(0.01);
+  envelopeDecay.resolution = (1-envelopeSustainMod)/(float)(nSteps);
   
-  for(uint8_t i = 0; i < envelopeDecay.value; i++){
-    envelopeDecay.mod[i] = counterFloat;
-    counterFloat -= resolution;
-  }
 
   //
   //RELEASE
   //
-  tempTime = map(ReleasePot, 0, 1024, 0, MAX_TIME);
-  envelopeRelease.value = (float)tempTime / (float)(0.0116);
-  resolution = (float)(envelopeSustainMod) / (float)envelopeRelease.value;
-  counterFloat = envelopeSustainMod;
-
-  for(uint8_t i = 0; i < envelopeRelease.value; i++){
-    envelopeRelease.mod[i] = counterFloat;
-    counterFloat -= resolution;
-  }
+  tempTime = mapf(ReleasePot, 0, 1024, 0, MAX_TIME);
+  nSteps = (float)tempTime / (float)(0.01);
+  envelopeRelease.resolution = (envelopeSustainMod)/(float)(nSteps);
 }
 
 //-----------------------------------------------------------
@@ -205,22 +192,19 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
          SIGNAL_MAX_SIZE = newSIGNAL_MAX_SIZE;
          LOCAL_SIGNAL_SIZE = (uint16_t)((float)SIGNAL_MAX_SIZE / (float)countKeysPressed);
       }
-
       //
       //HUGE TIMERERERER
       //
-      if(adsr[i].timingHighFrec++ == (samplerFrecuency >> HUGE_TIMER_SCALE)){
+      if(adsr[i].timingHighFrec++ == 441){//10ms
          adsr[i].timingHighFrec = 0;
 
          //
          // ATTACK
          //
-         if(adsr[i].timing <= envelopeAttack.value && adsr[i].semAttack){
-           adsr[i].timing++;
-           lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]*(float)envelopeAttack.mod[adsr[i].timing]);
+         if(adsr[i].semAttack){
+           adsr[i].mod += envelopeAttack.resolution;
            
-           if(adsr[i].timing > envelopeAttack.value){//finish attack
-            adsr[i].timing = 0;
+           if(adsr[i].mod >= 1){//finish attack
             adsr[i].semAttack = 0;
             adsr[i].semDecay = 1;
            }
@@ -229,38 +213,28 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
          //
          // DECAY
          //
-         else if(adsr[i].timing <= envelopeDecay.value && adsr[i].semDecay){
-          adsr[i].timing++;
-          lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]*(float)envelopeDecay.mod[adsr[i].timing]);
+         else if(adsr[i].semDecay){
+          adsr[i].mod -= envelopeDecay.resolution;
           
-          if(adsr[i].timing > envelopeDecay.value){//finish decay
-            adsr[i].timing = 0;
+          if(adsr[i].mod <= envelopeSustainMod){//finish decay
             adsr[i].semDecay = 0;
-            adsr[i].semSustain = 1;
           }
         }
-
-        //
-        // SUSTAIN
-        //
-        else if(adsr[i].semSustain){
-          lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]*(float)envelopeSustainMod);
-        }
-
+        
         //
         // RELEASE
         // 
-        else if(adsr[i].timing <= envelopeRelease.value && adsr[i].semRelease){//if release
-          adsr[i].timing++;
-          lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]*(float)envelopeRelease.mod[adsr[i].timing]);
+        else if(adsr[i].semRelease){//if release
+          adsr[i].mod -= envelopeRelease.resolution;
           
-          if(adsr[i].timing > envelopeDecay.value){//finish decay
-            adsr[i].timing = 0;
+          if(adsr[i].mod <= 0){//finish decay
             adsr[i].semRelease = 0;
+            adsr[i].mod = 0;
           }
-         }//release
-         
+        }    
       }//end huge timer
+
+      lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]*(float)adsr[i].mod);
     }
     else lastSample[i] = 0;
 

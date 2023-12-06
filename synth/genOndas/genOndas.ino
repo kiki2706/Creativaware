@@ -23,19 +23,21 @@ Button tecla3(pinTecla3);
 Button tecla4(pinTecla4);
 
 void setup() {
-  delay(1000);
+  Serial.begin(9600);
+  delay(500);
   
   //*AGT0_AGTCR = 0; // disable Millis counter, delay etc. don't want this Interrupt messing up output stability
 
   synthSetFrecuency(100);
   
-  // now setup the sound                                                
+  // now setup the sound   
+  synthADSR(1000,1000,256,1000);                 
   synthSetupDac();
-  synthADSR(1000,1000,200,1000);
   synthBeginTimer(44100);
 }
 
 void loop() {
+  
   synthSetFrecuency(map(analogRead(FrecuenciaPin), 0, 1024, 100, 3000));
 
   synthSetVolume(analogRead(VolumenPin));
@@ -75,4 +77,9 @@ uint8_t TEMP_countKeysPressed = 0;
 
     if(!TEMP_countKeysPressed)countKeysPressed = 1;// semi atomic!!
     else countKeysPressed = TEMP_countKeysPressed;
+
+
+
+
+    Serial.println(countKeysPressed);
 }
