@@ -16,7 +16,7 @@
 //    SYNTH HARDWARE CONFIGURATIONS
 //-------------------------------------
 #define NUMBER_OF_KEYS 4
-#define DAC_RESOLUTION 4090
+#define DAC_RESOLUTION 2045
 
 //-------------------------------
 //    SYNTH SOFTWARE VARIABLES
@@ -27,8 +27,13 @@ volatile uint16_t sampleIndex[NUMBER_OF_KEYS] = {0,0,0,0}; // sampler counter
 volatile uint16_t NUMBER_OF_SAMPLES[NUMBER_OF_KEYS];//number of samples: calculate using sample time and frecuency
 
 volatile uint32_t samplerFrecuency = 44100;
+<<<<<<< HEAD
 volatile uint16_t SIGNAL_MAX_SIZE = DAC_RESOLUTION>>3;  // hardware max value
 volatile uint16_t newSIGNAL_MAX_SIZE = DAC_RESOLUTION>>3; // hardware max readed value
+=======
+volatile uint16_t SIGNAL_MAX_SIZE = 2045;  // hardware max value
+volatile uint16_t newSIGNAL_MAX_SIZE = 2045; // hardware max readed value
+>>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
 volatile uint16_t LOCAL_SIGNAL_SIZE = SIGNAL_MAX_SIZE >> 4;// max value for each key (then, change 4 by countKeyPressed)
 
 volatile uint8_t kindOfWave = 2;
