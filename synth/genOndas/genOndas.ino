@@ -6,17 +6,23 @@ FspTimer audio_timer;
 #include "Button.h"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define pot1 A1
 #define pot2 A2
 #define pot3 A3
 #define pot4 A4
 #define pot5 A5
 =======
+=======
+>>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
 #define FrecuenciaPin A5
 #define AtaquePin A1
 #define DecayPin A2
 #define SustainPin A3
 #define ReleasePin A4
+<<<<<<< HEAD
+>>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
+=======
 >>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
 #define FormaOndaPin 2
 #define pinTecla1 3
@@ -51,6 +57,7 @@ void setup() {
 void loop() {
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   //Ponemos el modo ADSR
   synthADSR(analogRead(pot1),
               analogRead(pot2),
@@ -61,10 +68,15 @@ void loop() {
   //synthSetVolume(analogRead(potxd));
 
 =======
+=======
+>>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
   synthADSR(analogRead(AtaquePin),
             analogRead(DecayPin),  
             analogRead(SustainPin),
             analogRead(ReleasePin));
+<<<<<<< HEAD
+>>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
+=======
 >>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
 
   //  

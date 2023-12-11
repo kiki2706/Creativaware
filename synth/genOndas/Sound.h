@@ -28,8 +28,13 @@ volatile uint16_t NUMBER_OF_SAMPLES[NUMBER_OF_KEYS];//number of samples: calcula
 
 volatile uint32_t samplerFrecuency = 44100;
 <<<<<<< HEAD
+<<<<<<< HEAD
 volatile uint16_t SIGNAL_MAX_SIZE = DAC_RESOLUTION>>3;  // hardware max value
 volatile uint16_t newSIGNAL_MAX_SIZE = DAC_RESOLUTION>>3; // hardware max readed value
+=======
+volatile uint16_t SIGNAL_MAX_SIZE = 2045;  // hardware max value
+volatile uint16_t newSIGNAL_MAX_SIZE = 2045; // hardware max readed value
+>>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
 =======
 volatile uint16_t SIGNAL_MAX_SIZE = 2045;  // hardware max value
 volatile uint16_t newSIGNAL_MAX_SIZE = 2045; // hardware max readed value
