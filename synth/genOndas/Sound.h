@@ -27,8 +27,8 @@ volatile uint16_t sampleIndex[NUMBER_OF_KEYS] = {0,0,0,0}; // sampler counter
 volatile uint16_t NUMBER_OF_SAMPLES[NUMBER_OF_KEYS];//number of samples: calculate using sample time and frecuency
 
 volatile uint32_t samplerFrecuency = 44100;
-volatile uint16_t SIGNAL_MAX_SIZE = 4090;  // hardware max value
-volatile uint16_t newSIGNAL_MAX_SIZE = 4090; // hardware max readed value
+volatile uint16_t SIGNAL_MAX_SIZE = DAC_RESOLUTION>>3;  // hardware max value
+volatile uint16_t newSIGNAL_MAX_SIZE = DAC_RESOLUTION>>3; // hardware max readed value
 volatile uint16_t LOCAL_SIGNAL_SIZE = SIGNAL_MAX_SIZE >> 4;// max value for each key (then, change 4 by countKeyPressed)
 
 volatile uint8_t kindOfWave = 2;
@@ -51,7 +51,6 @@ typedef struct ADSR{
   uint16_t timingHighFrec;
   float mod;
 };
-
 ADSR adsr[NUMBER_OF_KEYS];
 
 
@@ -87,13 +86,6 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
 }
 
 //-------------------
-//    ADSR INICILICE
-//-------------------
-/*void synthADSRinit(float rate){
-  //aqui hariamos lo que tengo en la libretita, calcular la resolucion y demas del adsr
-}*/
-
-//-------------------
 //    ADSR REFRESH
 //-------------------
 void synthADSR(uint16_t AttackPot, uint16_t DecayPot, uint16_t SustainPot, uint16_t ReleasePot){
@@ -106,8 +98,6 @@ void synthADSR(uint16_t AttackPot, uint16_t DecayPot, uint16_t SustainPot, uint1
   nSteps = (float)tempTime / (float)(0.01);
   envelopeAttack.resolution = (float)1/(float)(nSteps);
   
-  
-
   //
   //SUSTAIN
   //
@@ -120,7 +110,6 @@ void synthADSR(uint16_t AttackPot, uint16_t DecayPot, uint16_t SustainPot, uint1
   nSteps = (float)tempTime / (float)(0.01);
   envelopeDecay.resolution = (1-envelopeSustainMod)/(float)(nSteps);
   
-
   //
   //RELEASE
   //
@@ -137,6 +126,8 @@ void synthSetFrecuency(uint16_t frecuency){
   
   if(filtroFrecuency == 3){
     filtroFrecuency = 0;
+
+    map(frecuency, 0, 1024, 400, 2000);
     
     for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){
       NUMBER_OF_SAMPLES[i] = samplerFrecuency/(frecuency-(i*200));//CAMBIAR LA RELACION DE LAS FRECUENCIAS
@@ -163,7 +154,7 @@ void synthSetFrecuency(uint16_t frecuency){
 //    SET SYTH MAX VOLUME 
 //---------------------------
 void synthSetVolume(int newVolume){
-  newSIGNAL_MAX_SIZE = map(newVolume, 0, 1024, 0, DAC_RESOLUTION);
+  newSIGNAL_MAX_SIZE = map(newVolume, 0, 1024, 0, DAC_RESOLUTION>>3);
 }
 
 //-----------------------------------
