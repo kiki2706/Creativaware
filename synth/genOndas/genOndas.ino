@@ -5,25 +5,12 @@ FspTimer audio_timer;
 #include "Sound.h"
 #include "Button.h"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-#define pot1 A1
-#define pot2 A2
-#define pot3 A3
-#define pot4 A4
-#define pot5 A5
-=======
-=======
->>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
+
 #define FrecuenciaPin A5
 #define AtaquePin A1
 #define DecayPin A2
 #define SustainPin A3
 #define ReleasePin A4
-<<<<<<< HEAD
->>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
-=======
->>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
 #define FormaOndaPin 2
 #define pinTecla1 3
 #define pinTecla2 4
@@ -48,45 +35,17 @@ void setup() {
   
   // now setup the sound                   
   synthSetupDac();
-<<<<<<< HEAD
-  synthBeginTimer(44100);
-
-  
+  synthBeginTimer(40000);
   synthSetFrecuency(475);
 }
 
 void loop() {
-=======
-  synthBeginTimer(40000);
-}
-
-void loop() {
-  
-  synthSetFrecuency(analogRead(FrecuenciaPin));
->>>>>>> fea7cea (sinthV1.8: liberacion de heap)
-
-<<<<<<< HEAD
-<<<<<<< HEAD
   //Ponemos el modo ADSR
-  synthADSR(analogRead(pot1),
-              analogRead(pot2),
-              analogRead(pot3),
-              analogRead(pot4));
-  synthSetFrecuency(analogRead(pot5));
-
-  //synthSetVolume(analogRead(potxd));
-
-=======
-=======
->>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
+  synthSetFrecuency(analogRead(FrecuenciaPin));
   synthADSR(analogRead(AtaquePin),
             analogRead(DecayPin),  
             analogRead(SustainPin),
             analogRead(ReleasePin));
-<<<<<<< HEAD
->>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
-=======
->>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
 
   //  
   // set the current waveform clicking the button

@@ -21,32 +21,26 @@
 //-------------------------------
 //    SYNTH SOFTWARE VARIABLES
 //-------------------------------
+#define NUMBER_OF_FRECS 52
+static uint16_t frecuenciasAfinadas[52] = {385,363, 343, 323, 305, 
+                                  288, 272, 257, 242, 229, 
+                                  216, 204, 192, 181, 171, 
+                                  161, 152, 144, 136, 128, 
+                                  121, 114, 108, 102, 96, 
+                                  90, 85, 80, 76, 72, 
+                                  68, 64, 60, 57, 54, 
+                                  51, 48, 45, 42, 40,
+                                  38, 36, 34, 32, 30, 28,
+                                  27 ,25, 24, 22, 21, 20};
 const uint32_t  SAMPLE_ARRAY_SIZE = 200;
 static uint8_t sampleArray[NUMBER_OF_KEYS][SAMPLE_ARRAY_SIZE];//array that save the waveforms   INICIALIZA LA MIERDA ESTA NOE
 static volatile uint16_t sampleIndex[NUMBER_OF_KEYS] = {0,0,0,0}; // sampler counter
 static volatile uint16_t NUMBER_OF_SAMPLES[NUMBER_OF_KEYS];//number of samples: calculate using sample time and frecuency
 
-<<<<<<< HEAD
-volatile uint32_t samplerFrecuency = 44100;
-<<<<<<< HEAD
-<<<<<<< HEAD
-volatile uint16_t SIGNAL_MAX_SIZE = DAC_RESOLUTION>>3;  // hardware max value
-volatile uint16_t newSIGNAL_MAX_SIZE = DAC_RESOLUTION>>3; // hardware max readed value
-=======
-volatile uint16_t SIGNAL_MAX_SIZE = 2045;  // hardware max value
-volatile uint16_t newSIGNAL_MAX_SIZE = 2045; // hardware max readed value
->>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
-=======
-volatile uint16_t SIGNAL_MAX_SIZE = 2045;  // hardware max value
-volatile uint16_t newSIGNAL_MAX_SIZE = 2045; // hardware max readed value
->>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
-volatile uint16_t LOCAL_SIGNAL_SIZE = SIGNAL_MAX_SIZE >> 4;// max value for each key (then, change 4 by countKeyPressed)
-=======
 static volatile uint32_t samplerFrecuency = 700;
 static volatile uint16_t SIGNAL_MAX_SIZE = 250;  // hardware max value
 static volatile uint16_t newSIGNAL_MAX_SIZE = 250; // hardware max readed value
 static volatile uint16_t LOCAL_SIGNAL_SIZE = 250;// max value for each key (then, change 4 by countKeyPressed)
->>>>>>> fea7cea (sinthV1.8: liberacion de heap)
 
 static volatile uint8_t kindOfWave = 2;
 static volatile uint8_t keys[NUMBER_OF_KEYS] = {0,0,0,0};
@@ -67,12 +61,8 @@ typedef struct ADSR{
   uint16_t timingHighFrec;
   float mod;
 };
-<<<<<<< HEAD
-ADSR adsr[NUMBER_OF_KEYS];
-=======
 
 static ADSR adsr[NUMBER_OF_KEYS];
->>>>>>> fea7cea (sinthV1.8: liberacion de heap)
 
 
 typedef struct ENVELOPE{
@@ -106,17 +96,15 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
   lastKeys[pressedKey] = keys[pressedKey];
 }
 
-//-------------------
-<<<<<<< HEAD
-=======
+
 //    ADSR INIT
 //-------------------
 /*void synthADSRinit(float rate){
   //aqui hariamos lo que tengo en la libretita, calcular la resolucion y demas del adsr
 }*/
 
+
 //-------------------
->>>>>>> fea7cea (sinthV1.8: liberacion de heap)
 //    ADSR REFRESH
 //-------------------
 void synthADSR(uint16_t AttackPot, uint16_t DecayPot, uint16_t SustainPot, uint16_t ReleasePot){
@@ -125,26 +113,26 @@ void synthADSR(uint16_t AttackPot, uint16_t DecayPot, uint16_t SustainPot, uint1
   //
   //ATTACK
   //
-  tempTime = mapf(AttackPot, 0, 1024, 0, MAX_TIME);
+  tempTime = mapf(AttackPot, 0, 1024, 0.1, MAX_TIME);
   nSteps = (float)tempTime / (float)(0.01);
   envelopeAttack.resolution = (float)1/(float)(nSteps);
   
   //
   //SUSTAIN
   //
-  envelopeSustainMod = mapf(SustainPot, 0 , 1024, 0, 1);
+  envelopeSustainMod = mapf(SustainPot, 0 , 1024, 0.1, 1);
 
   //
   //DECAY
   //
-  tempTime = mapf(DecayPot, 0, 1024, 0, MAX_TIME);
+  tempTime = mapf(DecayPot, 0, 1024, 0.1, MAX_TIME);
   nSteps = (float)tempTime / (float)(0.01);
   envelopeDecay.resolution = (1-envelopeSustainMod)/(float)(nSteps);
   
   //
   //RELEASE
   //
-  tempTime = mapf(ReleasePot, 0, 1024, 0, MAX_TIME);
+  tempTime = mapf(ReleasePot, 0, 1024, 0.1, MAX_TIME);
   nSteps = (float)tempTime / (float)(0.01);
   envelopeRelease.resolution = (envelopeSustainMod)/(float)(nSteps);
 }
@@ -153,15 +141,16 @@ void synthADSR(uint16_t AttackPot, uint16_t DecayPot, uint16_t SustainPot, uint1
 //    SET FRECUENCY OSCILLATOR (recalculate waveform tables)
 //-----------------------------------------------------------
 void synthSetFrecuency(uint16_t frecuency){
+  static uint8_t frecuencySample;
   if(frecuency != currentFrecuency) filtroFrecuency++;
   
   if(filtroFrecuency == 3){
     filtroFrecuency = 0;
 
-    map(frecuency, 0, 1024, 400, 2000);
+    frecuencySample = map(frecuency , 0, 1024, 0, NUMBER_OF_FRECS - NUMBER_OF_KEYS);//script matlab
     
     for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){
-      NUMBER_OF_SAMPLES[i] = 150;//CAMBIAR LA RELACION DE LAS FRECUENCIAS
+      NUMBER_OF_SAMPLES[i] = frecuenciasAfinadas[frecuencySample+i];//CAMBIAR LA RELACION DE LAS FRECUENCIAS
       
       for(uint16_t j = 0; j < NUMBER_OF_SAMPLES[i]; j++){
         if(kindOfWave == 0)// Triangle wave
