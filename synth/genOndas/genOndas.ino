@@ -48,6 +48,7 @@ void setup() {
   
   // now setup the sound                   
   synthSetupDac();
+<<<<<<< HEAD
   synthBeginTimer(44100);
 
   
@@ -55,6 +56,14 @@ void setup() {
 }
 
 void loop() {
+=======
+  synthBeginTimer(40000);
+}
+
+void loop() {
+  
+  synthSetFrecuency(analogRead(FrecuenciaPin));
+>>>>>>> fea7cea (sinthV1.8: liberacion de heap)
 
 <<<<<<< HEAD
 <<<<<<< HEAD

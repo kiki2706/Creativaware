@@ -15,17 +15,18 @@
 //-------------------------------------
 //    SYNTH HARDWARE CONFIGURATIONS
 //-------------------------------------
-#define NUMBER_OF_KEYS 4
-#define DAC_RESOLUTION 2045
+#define NUMBER_OF_KEYS 13
+#define DAC_RESOLUTION 250
 
 //-------------------------------
 //    SYNTH SOFTWARE VARIABLES
 //-------------------------------
-const uint32_t  SAMPLE_ARRAY_SIZE = 2300;
-volatile uint16_t sampleArray[NUMBER_OF_KEYS][SAMPLE_ARRAY_SIZE];//array that save the waveforms   INICIALIZA LA MIERDA ESTA NOE
-volatile uint16_t sampleIndex[NUMBER_OF_KEYS] = {0,0,0,0}; // sampler counter
-volatile uint16_t NUMBER_OF_SAMPLES[NUMBER_OF_KEYS];//number of samples: calculate using sample time and frecuency
+const uint32_t  SAMPLE_ARRAY_SIZE = 200;
+static uint8_t sampleArray[NUMBER_OF_KEYS][SAMPLE_ARRAY_SIZE];//array that save the waveforms   INICIALIZA LA MIERDA ESTA NOE
+static volatile uint16_t sampleIndex[NUMBER_OF_KEYS] = {0,0,0,0}; // sampler counter
+static volatile uint16_t NUMBER_OF_SAMPLES[NUMBER_OF_KEYS];//number of samples: calculate using sample time and frecuency
 
+<<<<<<< HEAD
 volatile uint32_t samplerFrecuency = 44100;
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -40,18 +41,23 @@ volatile uint16_t SIGNAL_MAX_SIZE = 2045;  // hardware max value
 volatile uint16_t newSIGNAL_MAX_SIZE = 2045; // hardware max readed value
 >>>>>>> e6bbf93 (synthV1.7: ADSR full operativo)
 volatile uint16_t LOCAL_SIGNAL_SIZE = SIGNAL_MAX_SIZE >> 4;// max value for each key (then, change 4 by countKeyPressed)
+=======
+static volatile uint32_t samplerFrecuency = 700;
+static volatile uint16_t SIGNAL_MAX_SIZE = 250;  // hardware max value
+static volatile uint16_t newSIGNAL_MAX_SIZE = 250; // hardware max readed value
+static volatile uint16_t LOCAL_SIGNAL_SIZE = 250;// max value for each key (then, change 4 by countKeyPressed)
+>>>>>>> fea7cea (sinthV1.8: liberacion de heap)
 
-volatile uint8_t kindOfWave = 2;
-volatile uint8_t keys[NUMBER_OF_KEYS] = {0,0,0,0};
-volatile uint8_t lastKeys[NUMBER_OF_KEYS] = {0,0,0,0};
-uint8_t countKeysPressed;
+static volatile uint8_t kindOfWave = 2;
+static volatile uint8_t keys[NUMBER_OF_KEYS] = {0,0,0,0};
+static volatile uint8_t lastKeys[NUMBER_OF_KEYS] = {0,0,0,0};
+static uint8_t countKeysPressed;
 
-uint16_t currentFrecuency = 0;
-uint8_t filtroFrecuency = 0;
+static uint16_t currentFrecuency = 0;
+static uint8_t filtroFrecuency = 0;
 
 //*********ADSR VARIABLES**********
 #define MAX_TIME 2
-#define HUGE_TIMER_SCALE 9
 
 typedef struct ADSR{
   uint8_t semAttack;
@@ -61,16 +67,21 @@ typedef struct ADSR{
   uint16_t timingHighFrec;
   float mod;
 };
+<<<<<<< HEAD
 ADSR adsr[NUMBER_OF_KEYS];
+=======
+
+static ADSR adsr[NUMBER_OF_KEYS];
+>>>>>>> fea7cea (sinthV1.8: liberacion de heap)
 
 
 typedef struct ENVELOPE{
   float resolution;
 };
-ENVELOPE envelopeAttack;
-ENVELOPE envelopeDecay;
-float envelopeSustainMod;
-ENVELOPE envelopeRelease;
+static ENVELOPE envelopeAttack;
+static ENVELOPE envelopeDecay;
+static float envelopeSustainMod;
+static ENVELOPE envelopeRelease;
 
 float mapf(float x, float in_min, float in_max, float out_min, float out_max)
 {
@@ -96,6 +107,16 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
 }
 
 //-------------------
+<<<<<<< HEAD
+=======
+//    ADSR INIT
+//-------------------
+/*void synthADSRinit(float rate){
+  //aqui hariamos lo que tengo en la libretita, calcular la resolucion y demas del adsr
+}*/
+
+//-------------------
+>>>>>>> fea7cea (sinthV1.8: liberacion de heap)
 //    ADSR REFRESH
 //-------------------
 void synthADSR(uint16_t AttackPot, uint16_t DecayPot, uint16_t SustainPot, uint16_t ReleasePot){
@@ -140,7 +161,7 @@ void synthSetFrecuency(uint16_t frecuency){
     map(frecuency, 0, 1024, 400, 2000);
     
     for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){
-      NUMBER_OF_SAMPLES[i] = samplerFrecuency/(frecuency-(i*200));//CAMBIAR LA RELACION DE LAS FRECUENCIAS
+      NUMBER_OF_SAMPLES[i] = 150;//CAMBIAR LA RELACION DE LAS FRECUENCIAS
       
       for(uint16_t j = 0; j < NUMBER_OF_SAMPLES[i]; j++){
         if(kindOfWave == 0)// Triangle wave
@@ -191,12 +212,13 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
       if(sampleIndex[i] >= NUMBER_OF_SAMPLES[i]){//if a period finishes
          sampleIndex[i] = 0;
          SIGNAL_MAX_SIZE = newSIGNAL_MAX_SIZE;
-         LOCAL_SIGNAL_SIZE = (uint16_t)((float)SIGNAL_MAX_SIZE / (float)countKeysPressed);
+         //LOCAL_SIGNAL_SIZE = (uint16_t)((float)SIGNAL_MAX_SIZE / (float)countKeysPressed);
+         LOCAL_SIGNAL_SIZE = SIGNAL_MAX_SIZE;
       }
       //
       //HUGE TIMERERERER
       //
-      if(adsr[i].timingHighFrec++ == 441){//10ms
+      if(adsr[i].timingHighFrec++ == 400){//10ms
          adsr[i].timingHighFrec = 0;
 
          //
