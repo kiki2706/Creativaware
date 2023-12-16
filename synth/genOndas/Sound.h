@@ -15,34 +15,30 @@
 //-------------------------------------
 //    SYNTH HARDWARE CONFIGURATIONS
 //-------------------------------------
-#define NUMBER_OF_KEYS 13
+#define NUMBER_OF_KEYS 4
 #define DAC_RESOLUTION 250
 
 //-------------------------------
 //    SYNTH SOFTWARE VARIABLES
 //-------------------------------
 #define NUMBER_OF_FRECS 52
-static uint16_t frecuenciasAfinadas[52] = {385,363, 343, 323, 305, 
-                                  288, 272, 257, 242, 229, 
-                                  216, 204, 192, 181, 171, 
-                                  161, 152, 144, 136, 128, 
-                                  121, 114, 108, 102, 96, 
-                                  90, 85, 80, 76, 72, 
-                                  68, 64, 60, 57, 54, 
-                                  51, 48, 45, 42, 40,
-                                  38, 36, 34, 32, 30, 28,
-                                  27 ,25, 24, 22, 21, 20};
+static uint16_t frecuenciasAfinadas[48] = {130, 138, 146, 155, 164, 174, 185, 196, 207, 220,
+                                          233, 246, 261, 277, 293, 311, 329, 349, 370, 392, 
+                                          415, 440, 466, 493, 523, 554, 587, 622, 659, 698, 
+                                          740, 784, 830, 880, 932, 9878, 1046, 1108, 1174, 
+                                          1244, 1318, 1396, 1480, 1568, 1661, 1760, 1864, 1975};
+static volatile uint16_t looper[16000]; 
 const uint32_t  SAMPLE_ARRAY_SIZE = 200;
 static uint8_t sampleArray[NUMBER_OF_KEYS][SAMPLE_ARRAY_SIZE];//array that save the waveforms   INICIALIZA LA MIERDA ESTA NOE
 static volatile uint16_t sampleIndex[NUMBER_OF_KEYS] = {0,0,0,0}; // sampler counter
 static volatile uint16_t NUMBER_OF_SAMPLES[NUMBER_OF_KEYS];//number of samples: calculate using sample time and frecuency
 
-static volatile uint32_t samplerFrecuency = 700;
-static volatile uint16_t SIGNAL_MAX_SIZE = 250;  // hardware max value
-static volatile uint16_t newSIGNAL_MAX_SIZE = 250; // hardware max readed value
-static volatile uint16_t LOCAL_SIGNAL_SIZE = 250;// max value for each key (then, change 4 by countKeyPressed)
+static volatile uint32_t samplerFrecuency = 40000;
+static volatile uint16_t SIGNAL_MAX_SIZE = 512;  // hardware max value
+static volatile uint16_t newSIGNAL_MAX_SIZE = 512; // hardware max readed value
+static volatile uint16_t LOCAL_SIGNAL_SIZE = 512;// max value for each key (then, change 4 by countKeyPressed)
 
-static volatile uint8_t kindOfWave = 2;
+static volatile uint8_t kindOfWave = 0;
 static volatile uint8_t keys[NUMBER_OF_KEYS] = {0,0,0,0};
 static volatile uint8_t lastKeys[NUMBER_OF_KEYS] = {0,0,0,0};
 static uint8_t countKeysPressed;
@@ -64,7 +60,6 @@ typedef struct ADSR{
 
 static ADSR adsr[NUMBER_OF_KEYS];
 
-
 typedef struct ENVELOPE{
   float resolution;
 };
@@ -72,6 +67,10 @@ static ENVELOPE envelopeAttack;
 static ENVELOPE envelopeDecay;
 static float envelopeSustainMod;
 static ENVELOPE envelopeRelease;
+
+//******** WAVEFORM VARIABLES**********
+static float frecuencyResolution[NUMBER_OF_KEYS];
+static float outputAmplitude[NUMBER_OF_KEYS];
 
 float mapf(float x, float in_min, float in_max, float out_min, float out_max)
 {
@@ -171,6 +170,37 @@ void synthSetFrecuency(uint16_t frecuency){
 }
 
 //--------------------------
+//    GOOD FRECUENCY
+//--------------------------
+void setNewFrecuency(uint16_t rawFrecuency){
+  float period, nSteps, resolution, frecuency;
+
+  frecuency = frecuenciasAfinadas[map(rawFrecuency, 0, 1024, 0, 48)];
+  resolution = (float)1/400;
+  period = 1/frecuency;
+  period *= 100;
+  
+  for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){
+    if(kindOfWave == 0){
+      period = period /2;
+      nSteps = (float)period / (float)(resolution);
+      frecuencyResolution[i] = (LOCAL_SIGNAL_SIZE)/(float)(nSteps);
+    }
+    else if(kindOfWave == 1){//Square Wave
+      nSteps = (float)period / (float)(resolution);
+      frecuencyResolution[i] = (LOCAL_SIGNAL_SIZE)/(float)(nSteps);
+    }
+
+    //
+    // Saw-tooth waveform
+    else if(kindOfWave == 2){
+      nSteps = (float)period / (float)(resolution);
+      frecuencyResolution[i] = (LOCAL_SIGNAL_SIZE)/(float)(nSteps);
+    }
+  }
+}
+
+//--------------------------
 //    SET SYTH MAX VOLUME 
 //---------------------------
 void synthSetVolume(int newVolume){
@@ -191,7 +221,7 @@ void synthSetWaveForm(uint8_t wave){
 //  CALLBACK ISR USED BY TIMER
 //---------------------------------
 void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
-  uint16_t lastSample[NUMBER_OF_KEYS], finalSample = 0;
+  uint16_t lastSample[NUMBER_OF_KEYS], finalSample = 0, nextSample;
 
   for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){  
       
@@ -201,7 +231,6 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
       if(sampleIndex[i] >= NUMBER_OF_SAMPLES[i]){//if a period finishes
          sampleIndex[i] = 0;
          SIGNAL_MAX_SIZE = newSIGNAL_MAX_SIZE;
-         //LOCAL_SIGNAL_SIZE = (uint16_t)((float)SIGNAL_MAX_SIZE / (float)countKeysPressed);
          LOCAL_SIGNAL_SIZE = SIGNAL_MAX_SIZE;
       }
       //
@@ -246,14 +275,53 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
         }    
       }//end huge timer
 
-      lastSample[i] = (uint16_t)(sampleArray[i][sampleIndex[i]]*(float)adsr[i].mod);
+
+      //
+      // SET THE WAVEFORMMMM
+      //
+      outputAmplitude[i] += frecuencyResolution[i];
+
+      // 
+      // TRIANGLE
+      //
+      if(kindOfWave == 0){
+        if(outputAmplitude[i] >= LOCAL_SIGNAL_SIZE<<1){
+          outputAmplitude[i] = 0;
+        }
+        if(outputAmplitude[i] <= LOCAL_SIGNAL_SIZE)
+          nextSample = outputAmplitude[i];
+        else
+          nextSample = (LOCAL_SIGNAL_SIZE<<1) - outputAmplitude[i];
+      }
+
+      // 
+      // SQUARE
+      else if(kindOfWave == 1){//Square Wave
+        if(outputAmplitude[i] >= LOCAL_SIGNAL_SIZE){
+          outputAmplitude[i] = 0;
+        }
+       if(outputAmplitude[i] >= LOCAL_SIGNAL_SIZE>>1) nextSample = LOCAL_SIGNAL_SIZE;
+       else nextSample = 0;
+      }
+
+      // 
+      // SAWTOOTH
+      //
+      else if(kindOfWave == 2){
+        if(outputAmplitude[i] >= LOCAL_SIGNAL_SIZE){
+          outputAmplitude[i] = 0;
+        }
+        nextSample = outputAmplitude[i];
+      }
+
+      lastSample[i] = (uint16_t)(nextSample*(float)adsr[i].mod);
     }
     else lastSample[i] = 0;
 
     
     finalSample += lastSample[i];
   }// for all keys[i]
-
+  
   
   *DAC12_DADR0 = finalSample;  
 } 

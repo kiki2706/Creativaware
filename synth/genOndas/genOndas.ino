@@ -1,4 +1,4 @@
-#include "FspTimer.h"
+      #include "FspTimer.h"
 #include "Defines.h"
 FspTimer audio_timer;
 
@@ -30,18 +30,14 @@ bool nadaPulsado = true;
 
 void setup() {
   delay(500);
-  
-  //*AGT0_AGTCR = 0; // disable Millis counter, delay etc. don't want this Interrupt messing up output stability
-  
-  // now setup the sound                   
+              
   synthSetupDac();
   synthBeginTimer(40000);
-  synthSetFrecuency(475);
 }
 
 void loop() {
   //Ponemos el modo ADSR
-  synthSetFrecuency(analogRead(FrecuenciaPin));
+  setNewFrecuency(analogRead(FrecuenciaPin));
   synthADSR(analogRead(AtaquePin),
             analogRead(DecayPin),  
             analogRead(SustainPin),
@@ -55,7 +51,7 @@ void loop() {
        semaforo = true;
        waveForm++;
         if(waveForm >= 3) waveForm = 0;
-        synthSetWaveForm(waveForm);
+        synthSetWaveForm(waveForm); 
       }
   }   
   else semaforo = false; 
