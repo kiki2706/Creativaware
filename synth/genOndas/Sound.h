@@ -22,12 +22,15 @@
 //    SYNTH SOFTWARE VARIABLES
 //-------------------------------
 #define NUMBER_OF_FRECS 52
+#define LOOPER_SIZE 16000
+
 static uint16_t frecuenciasAfinadas[48] = {130, 138, 146, 155, 164, 174, 185, 196, 207, 220,
                                           233, 246, 261, 277, 293, 311, 329, 349, 370, 392, 
                                           415, 440, 466, 493, 523, 554, 587, 622, 659, 698, 
                                           740, 784, 830, 880, 932, 9878, 1046, 1108, 1174, 
                                           1244, 1318, 1396, 1480, 1568, 1661, 1760, 1864, 1975};
-static volatile uint16_t looper[16000]; 
+volatile uint16_t looper[LOOPER_SIZE]; 
+static volatile uint8_t activeLooper = 0, looperCount = 0;
 const uint32_t  SAMPLE_ARRAY_SIZE = 200;
 static uint8_t sampleArray[NUMBER_OF_KEYS][SAMPLE_ARRAY_SIZE];//array that save the waveforms   INICIALIZA LA MIERDA ESTA NOE
 static volatile uint16_t sampleIndex[NUMBER_OF_KEYS] = {0,0,0,0}; // sampler counter
@@ -96,11 +99,13 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
 }
 
 
-//    ADSR INIT
-//-------------------
-/*void synthADSRinit(float rate){
-  //aqui hariamos lo que tengo en la libretita, calcular la resolucion y demas del adsr
-}*/
+//-------------------------------------
+//    ACTIVE LOOPER SAVE
+//-------------------------------------
+void synthActiveLooper(void){
+  looperCount = 0;
+  activeLooper = 1;
+}
 
 
 //-------------------
@@ -221,7 +226,7 @@ void synthSetWaveForm(uint8_t wave){
 //  CALLBACK ISR USED BY TIMER
 //---------------------------------
 void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
-  uint16_t lastSample[NUMBER_OF_KEYS], finalSample = 0, nextSample;
+  uint16_t lastSample[NUMBER_OF_KEYS], finalSample = 0, nextSample, subLooperTimer, looperTemp;
 
   for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){  
       
@@ -318,12 +323,27 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
     }
     else lastSample[i] = 0;
 
-    
     finalSample += lastSample[i];
   }// for all keys[i]
-  
-  
-  *DAC12_DADR0 = finalSample;  
+
+  if(subLooperTimer == 16){
+    subLooperTimer = 0;
+    looperCount++;
+    
+    if(activeLooper){
+      looper[looperCount] = finalSample; 
+    }
+    else{
+      looperTemp = looper[looperCount];
+    }
+
+    if(looperCount >= LOOPER_SIZE){
+      looperCount = 0;
+      activeLooper = 0;
+    }
+  }
+    
+  *DAC12_DADR0 = finalSample + looperTemp;  
 } 
 
 //---------------------------------

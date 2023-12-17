@@ -1,4 +1,4 @@
-      #include "FspTimer.h"
+#include "FspTimer.h"
 #include "Defines.h"
 FspTimer audio_timer;
 
@@ -15,16 +15,16 @@ FspTimer audio_timer;
 #define pinTecla1 3
 #define pinTecla2 4
 #define pinTecla3 5
-#define pinTecla4 6
+#define looper 6
 
 uint8_t waveForm=0;
-bool semaforo = false;
+bool semaforo = false, semaforoLooper = false;
 
 Button botonFormaOnda(FormaOndaPin);
 Button tecla1(pinTecla1);
 Button tecla2(pinTecla2);
 Button tecla3(pinTecla3);
-Button tecla4(pinTecla4);
+Button looperButton(looper);
 
 bool nadaPulsado = true;
 
@@ -33,6 +33,9 @@ void setup() {
               
   synthSetupDac();
   synthBeginTimer(40000);
+
+  uint8_t i;
+  for(i = 0; i < 16000; i++) looper[i] = 0;
 }
 
 void loop() {
@@ -56,6 +59,14 @@ void loop() {
   }   
   else semaforo = false; 
 
+  if (looperButton.isPressed()){
+      if(!semaforoLooper){
+       semaforoLooper = true;
+       synthActiveLooper();
+      }
+  }   
+  else semaforoLooper = false; 
+
   //
   // each key plays a different wave
   //
@@ -65,7 +76,6 @@ void loop() {
   
   synthKeysState(2, tecla3.isPressed());
 
-  synthKeysState(3, tecla4.isPressed());
 
 //PONER EN UNA FUNCION EN ALGUN LAO XDIOS
 //
