@@ -16,19 +16,18 @@
 //    SYNTH HARDWARE CONFIGURATIONS
 //-------------------------------------
 #define NUMBER_OF_KEYS 4
-#define DAC_RESOLUTION 250
+#define DAC_RESOLUTION 1024
 
 //-------------------------------
 //    SYNTH SOFTWARE VARIABLES
 //-------------------------------
-#define NUMBER_OF_FRECS 52
-#define LOOPER_SIZE 16000
+#define NUMBER_OF_FRECS 39
+const uint32_t LOOPER_SIZE = 16000;
 
-static uint16_t frecuenciasAfinadas[48] = {130, 138, 146, 155, 164, 174, 185, 196, 207, 220,
+static uint16_t frecuenciasAfinadas[NUMBER_OF_FRECS] = {130, 138, 146, 155, 164, 174, 185, 196, 207, 220,
                                           233, 246, 261, 277, 293, 311, 329, 349, 370, 392, 
                                           415, 440, 466, 493, 523, 554, 587, 622, 659, 698, 
-                                          740, 784, 830, 880, 932, 9878, 1046, 1108, 1174, 
-                                          1244, 1318, 1396, 1480, 1568, 1661, 1760, 1864, 1975};
+                                          740, 784, 830, 880, 932, 9878, 1046, 1108, 1174};
 volatile uint16_t looper[LOOPER_SIZE]; 
 static volatile uint8_t activeLooper = 0, looperCount = 0;
 const uint32_t  SAMPLE_ARRAY_SIZE = 200;
@@ -37,9 +36,9 @@ static volatile uint16_t sampleIndex[NUMBER_OF_KEYS] = {0,0,0,0}; // sampler cou
 static volatile uint16_t NUMBER_OF_SAMPLES[NUMBER_OF_KEYS];//number of samples: calculate using sample time and frecuency
 
 static volatile uint32_t samplerFrecuency = 40000;
-static volatile uint16_t SIGNAL_MAX_SIZE = 512;  // hardware max value
-static volatile uint16_t newSIGNAL_MAX_SIZE = 512; // hardware max readed value
-static volatile uint16_t LOCAL_SIGNAL_SIZE = 512;// max value for each key (then, change 4 by countKeyPressed)
+static volatile uint16_t SIGNAL_MAX_SIZE = 1024;  // hardware max value
+static volatile uint16_t newSIGNAL_MAX_SIZE = 1024; // hardware max readed value
+static volatile uint16_t LOCAL_SIGNAL_SIZE = 1024;// max value for each key (then, change 4 by countKeyPressed)
 
 static volatile uint8_t kindOfWave = 0;
 static volatile uint8_t keys[NUMBER_OF_KEYS] = {0,0,0,0};
@@ -343,7 +342,7 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
     }
   }
     
-  *DAC12_DADR0 = finalSample + looperTemp;  
+  *DAC12_DADR0 = finalSample /*+ looperTemp*/;  
 } 
 
 //---------------------------------

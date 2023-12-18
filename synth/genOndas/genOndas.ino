@@ -34,8 +34,8 @@ void setup() {
   synthSetupDac();
   synthBeginTimer(40000);
 
-  uint8_t i;
-  for(i = 0; i < 16000; i++) looper[i] = 0;
+  uint32_t i = 0;
+  //for(i = 0; i < 16000; i++) looper[i] = 0;
 }
 
 void loop() {
