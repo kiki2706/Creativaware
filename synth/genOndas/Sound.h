@@ -16,11 +16,16 @@
 //    SYNTH HARDWARE CONFIGURATIONS
 //-------------------------------------
 #define NUMBER_OF_KEYS 13
-#define DAC_RESOLUTION 250
+#define DAC_RESOLUTION 4090
 
 //-------------------------------
 //    SYNTH SOFTWARE VARIABLES
 //-------------------------------
+const uint16_t LOOPER_SIZE = 800;
+uint16_t looper[LOOPER_SIZE]; 
+volatile uint8_t activeLooper = 0, subLooperTimer=0;
+volatile uint16_t looperCount = 0;
+
 #define NUMBER_OF_FRECS 52
 static uint16_t frecuenciasAfinadas[52] = {385,363, 343, 323, 305, 
                                   288, 272, 257, 242, 229, 
@@ -33,16 +38,16 @@ static uint16_t frecuenciasAfinadas[52] = {385,363, 343, 323, 305,
                                   38, 36, 34, 32, 30, 28,
                                   27 ,25, 24, 22, 21, 20};
 const uint32_t  SAMPLE_ARRAY_SIZE = 200;
-static uint8_t sampleArray[NUMBER_OF_KEYS][SAMPLE_ARRAY_SIZE];//array that save the waveforms   INICIALIZA LA MIERDA ESTA NOE
+static uint16_t sampleArray[NUMBER_OF_KEYS][SAMPLE_ARRAY_SIZE];//array that save the waveforms   INICIALIZA LA MIERDA ESTA NOE
 static volatile uint16_t sampleIndex[NUMBER_OF_KEYS] = {0,0,0,0}; // sampler counter
 static volatile uint16_t NUMBER_OF_SAMPLES[NUMBER_OF_KEYS];//number of samples: calculate using sample time and frecuency
 
 static volatile uint32_t samplerFrecuency = 700;
-static volatile uint16_t SIGNAL_MAX_SIZE = 250;  // hardware max value
-static volatile uint16_t newSIGNAL_MAX_SIZE = 250; // hardware max readed value
-static volatile uint16_t LOCAL_SIGNAL_SIZE = 250;// max value for each key (then, change 4 by countKeyPressed)
+static volatile uint16_t SIGNAL_MAX_SIZE = 512;  // hardware max value
+static volatile uint16_t newSIGNAL_MAX_SIZE = 512; // hardware max readed value
+static volatile uint16_t LOCAL_SIGNAL_SIZE = 512;// max value for each key (then, change 4 by countKeyPressed)
 
-static volatile uint8_t kindOfWave = 2;
+static volatile uint8_t kindOfWave = 0;
 static volatile uint8_t keys[NUMBER_OF_KEYS] = {0,0,0,0};
 static volatile uint8_t lastKeys[NUMBER_OF_KEYS] = {0,0,0,0};
 static uint8_t countKeysPressed;
@@ -51,7 +56,7 @@ static uint16_t currentFrecuency = 0;
 static uint8_t filtroFrecuency = 0;
 
 //*********ADSR VARIABLES**********
-#define MAX_TIME 2
+#define MAX_TIME 1
 
 typedef struct ADSR{
   uint8_t semAttack;
@@ -87,6 +92,10 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
   if(lastKeys[pressedKey] != keys[pressedKey]){
     if(keys[pressedKey] == 1){ 
       adsr[pressedKey].semAttack = 1; 
+      adsr[pressedKey].semRelease = 0;
+      adsr[pressedKey].semDecay = 0;
+      adsr[pressedKey].mod = 0;
+      
     }
     else {
       adsr[pressedKey].semRelease = 1; 
@@ -97,11 +106,13 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
 }
 
 
-//    ADSR INIT
-//-------------------
-/*void synthADSRinit(float rate){
-  //aqui hariamos lo que tengo en la libretita, calcular la resolucion y demas del adsr
-}*/
+//-------------------------------------
+//    ACTIVE LOOPER SAVE
+//-------------------------------------
+void synthActiveLooper(uint8_t xd){
+  looperCount = 0;
+  activeLooper = 1;
+}
 
 
 //-------------------
@@ -191,7 +202,7 @@ void synthSetWaveForm(uint8_t wave){
 //  CALLBACK ISR USED BY TIMER
 //---------------------------------
 void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
-  uint16_t lastSample[NUMBER_OF_KEYS], finalSample = 0;
+  uint16_t lastSample[NUMBER_OF_KEYS], finalSample = 0, looperTemp = 0;
 
   for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){  
       
@@ -250,7 +261,22 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
     }
     else lastSample[i] = 0;
 
+  if(subLooperTimer++ == 128){
+    subLooperTimer = 0;
+    looperCount++;
     
+    if(activeLooper){
+      looper[looperCount] = finalSample + looperTemp; 
+    }
+    else{
+      looperTemp = looper[looperCount];
+    }
+
+    if(looperCount >= LOOPER_SIZE){
+      looperCount = 0;
+      activeLooper = 0;
+    }
+  }
     finalSample += lastSample[i];
   }// for all keys[i]
 
@@ -263,6 +289,8 @@ void timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
 //---------------------------------
 bool synthBeginTimer(float rate) {
   uint8_t timer_type = GPT_TIMER;
+  int m =0;
+  for(m = 0; m < LOOPER_SIZE; m++) looper[m] = 0;
   int8_t tindex = FspTimer::get_available_timer(timer_type);
 
   samplerFrecuency = rate;

@@ -15,20 +15,22 @@ FspTimer audio_timer;
 #define pinTecla1 3
 #define pinTecla2 4
 #define pinTecla3 5
-#define pinTecla4 6
+#define looper 7
 
 uint8_t waveForm=0;
-bool semaforo = false;
+bool semaforo = false, semaforoLooper = false;
 
 Button botonFormaOnda(FormaOndaPin);
 Button tecla1(pinTecla1);
 Button tecla2(pinTecla2);
 Button tecla3(pinTecla3);
-Button tecla4(pinTecla4);
+//Button tecla4(pinTecla4);
+Button looperButton(looper);
 
 bool nadaPulsado = true;
 
 void setup() {
+  Serial.begin(9600);
   delay(500);
   
   //*AGT0_AGTCR = 0; // disable Millis counter, delay etc. don't want this Interrupt messing up output stability
@@ -36,7 +38,7 @@ void setup() {
   // now setup the sound                   
   synthSetupDac();
   synthBeginTimer(40000);
-  synthSetFrecuency(475);
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
 void loop() {
@@ -58,8 +60,16 @@ void loop() {
         synthSetWaveForm(waveForm);
       }
   }   
-  else semaforo = false; 
+  else semaforo = false;
 
+  /*if(looperButton.isPressed()){
+      if(!semaforoLooper){
+       semaforoLooper = true;
+      synthActiveLooper(0);
+      digitalWrite(LED_BUILTIN, HIGH);
+      }
+  }   
+  else {semaforoLooper = false; digitalWrite(LED_BUILTIN, LOW);}*/
   //
   // each key plays a different wave
   //
@@ -68,8 +78,6 @@ void loop() {
   synthKeysState(1, tecla2.isPressed());
   
   synthKeysState(2, tecla3.isPressed());
-
-  synthKeysState(3, tecla4.isPressed());
 
 //PONER EN UNA FUNCION EN ALGUN LAO XDIOS
 //
