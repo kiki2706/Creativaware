@@ -88,6 +88,7 @@ void synthKeysState(uint8_t pressedKey, uint8_t keyState){
   if(lastKeys[pressedKey] != keys[pressedKey]){
     if(keys[pressedKey] == 1){ 
       adsr[pressedKey].semAttack = 1; 
+      outputAmplitude[pressedKey] = 0;
     }
     else {
       adsr[pressedKey].semRelease = 1; 
@@ -178,13 +179,14 @@ void synthSetFrecuency(uint16_t frecuency){
 //--------------------------
 void setNewFrecuency(uint16_t rawFrecuency){
   float period, nSteps, resolution, frecuency;
-
-  frecuency = frecuenciasAfinadas[map(rawFrecuency, 0, 1024, 0, 48)];
-  resolution = (float)1/400;
-  period = 1/frecuency;
-  period *= 100;
+  uint8_t frecPos = map(rawFrecuency, 0, 1024, 0, (NUMBER_OF_FRECS - NUMBER_OF_KEYS));
   
   for(uint8_t i = 0; i < NUMBER_OF_KEYS; i++){
+    frecuency = frecuenciasAfinadas[frecPos+i];
+    resolution = (float)1/400;
+    period = 1/frecuency;
+    period *= 100;
+  
     if(kindOfWave == 0){
       period = period /2;
       nSteps = (float)period / (float)(resolution);
