@@ -9,10 +9,17 @@
 #define SELECTOR0 4
 
 
+<<<<<<< HEAD
   //VARIABLES PARA EL CODIGO
 uint8_t array_teclas[15]; //Array en el que se almacenan los datos
 unsigned long tiempo = 0; // Almacen del tiempo del programa
 int periodo = 100; //Cada cuanto se toma una muestra
+=======
+//VARIABLES PARA EL CODIGO
+uint8_t array_teclas[15]; //Array en el que se almacenan los datos
+unsigned long tiempo = 0; // Almacen del tiempo del programa
+int periodo = 500; //Cada cuanto se toma una muestra
+>>>>>>> de11f4aa627609dbbf87cfe337fc0cafefd90944
 int ADOS = 0; //Variable A2 del multiplexor A[3:0]
 int AUNO = 0; //Variable A1 del multiplexor A[3:0]
 int ACERO = 0; //Variable A0 del multiplexor A[3:0]
@@ -26,25 +33,44 @@ void setup() {
   pinMode(SELECTOR2, OUTPUT);
   pinMode(SELECTOR1, OUTPUT);
   pinMode(SELECTOR0, OUTPUT);
+<<<<<<< HEAD
+=======
+  
+>>>>>>> de11f4aa627609dbbf87cfe337fc0cafefd90944
 }
 
 //LOOP
 void loop() {
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> de11f4aa627609dbbf87cfe337fc0cafefd90944
   //FUNCION QUE ALMACENA LOS DATOS EN EL ARRAY DESIGNADO PARA ELLO
   if(millis() >tiempo + periodo){
     if(ADOS == 0){
       digitalWrite(SELECTOR2,LOW); //Pongo A2 a 0
+<<<<<<< HEAD
 //      Serial.println(AUNO);
 //      Serial.println(ACERO);
+=======
+>>>>>>> de11f4aa627609dbbf87cfe337fc0cafefd90944
       if(AUNO == 0){
         digitalWrite(SELECTOR1,LOW); //Pongo A1 a 0
         if(ACERO == 0){
           digitalWrite(SELECTOR0,LOW); //Pongo A0 a 0
+<<<<<<< HEAD
           
           //Lectura de los valores de salida del multiplexor.
           bool entrada1 = digitalRead(SALIDA1_TECLAS);
           bool entrada2 = digitalRead(SALIDA2_TECLAS);
           
+=======
+          //Lectura de los valores de salida del multiplexor.
+          bool entrada1 = digitalRead(SALIDA1_TECLAS);
+          bool entrada2 = digitalRead(SALIDA2_TECLAS);
+
+>>>>>>> de11f4aa627609dbbf87cfe337fc0cafefd90944
           ACERO = 1;
           tiempo = millis(); //Cojo el tiempo que lleva el programa en ejecucion
           //Compruebo valores obtenidos y los guardo en el array
@@ -132,7 +158,10 @@ void loop() {
         digitalWrite(SELECTOR1,LOW);
         if(ACERO == 0){
           digitalWrite(SELECTOR0,LOW);
+<<<<<<< HEAD
           
+=======
+>>>>>>> de11f4aa627609dbbf87cfe337fc0cafefd90944
           bool entrada1 = digitalRead(SALIDA1_TECLAS);
           bool entrada2 = digitalRead(SALIDA2_TECLAS);
           ACERO = 1;
@@ -227,12 +256,18 @@ void loop() {
          Serial.println("Tecla no pulsada");
       }
     }
+<<<<<<< HEAD
     Serial.println("------------------------------------------------------------");
     semaforo = false;
     tiempo = millis();
     ACERO = 0;
     AUNO = 0;
     ADOS = 0;
+=======
+    //Serial.println("------------------------------------------------------------");
+    semaforo = false;
+    tiempo = millis();
+>>>>>>> de11f4aa627609dbbf87cfe337fc0cafefd90944
   }
   
 }
